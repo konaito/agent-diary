@@ -143,21 +143,27 @@ function notice(big, text, extraHtml = "") {
   root.innerHTML = `<div class="notice"><div class="big">${esc(big)}</div><p>${esc(text)}</p>${extraHtml}</div>`;
 }
 
-// 持ち主かどうかを返す。持ち主が決まっていなければ、このブラウザを匿名ログインさせて持ち主にする
-async function ensureOwner() {
+// 訪問者は全員匿名ログインする。訪れた人数は匿名ユーザーの数で数える
+async function signIn() {
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    // 持ち主が決まった後の訪問者は匿名ログインさせない。匿名ユーザーを増やさないため
-    const { data: claimed, error } = await sb.rpc("site_is_claimed");
-    if (error) throw error;
-    if (claimed) return false;
-    const r = await sb.auth.signInAnonymously();
-    if (r.error) throw r.error;
-  }
+  if (session) return;
+  const { error } = await sb.auth.signInAnonymously();
+  if (error) throw error;
+}
+
+// 持ち主かどうかを返す。持ち主が決まっていなければ、このユーザーが持ち主になる
+async function claimOwner() {
   const { data, error } = await sb.rpc("claim_site");
   if (error) throw error;
   return data === true;
 }
+
+// 訪問を記録して、訪れた人数を返す。数えられなくても画面は出す
+async function recordVisit(view) {
+  const { data, error } = await sb.rpc("record_visit", { p_view: view });
+  return error ? null : data;
+}
+const visitorsHtml = (stats) => (stats ? ` · 訪れた人 ${stats.visitors}` : "");
 
 let entries = [];
 
@@ -243,21 +249,36 @@ function start(list, countsHtml) {
 }
 
 async function main() {
-  if (new URLSearchParams(location.search).has("demo")) {
-    start(DEMO_ENTRIES, `<span class="warn">デモ</span> · 架空の日記 · <a href="./">戻る</a>`);
+  const demo = new URLSearchParams(location.search).has("demo");
+  let signedIn = true;
+  try {
+    await signIn();
+  } catch (e) {
+    signedIn = false;
+    if (!demo) {
+      notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`);
+      return;
+    }
+  }
+  if (demo) {
+    const stats = signedIn ? await recordVisit("demo") : null;
+    start(DEMO_ENTRIES, `<span class="warn">デモ</span> · 架空の日記${visitorsHtml(stats)} · <a href="./">戻る</a>`);
     return;
   }
   let owner;
   try {
-    owner = await ensureOwner();
+    owner = await claimOwner();
   } catch (e) {
     notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`);
     return;
   }
   if (!owner) {
+    const stats = await recordVisit("locked");
+    document.getElementById("counts").innerHTML = visitorsHtml(stats).replace(/^ · /, "");
     notice("閉じています", "この日記は、最初にこのページを開いた人だけが読める。", `<p><a class="demo-link" href="?demo">架空の日記でデモを見る</a></p>`);
     return;
   }
+  const visitStats = await recordVisit("owner");
   const [{ data, error }, { data: queue }] = await Promise.all([
     sb.from("diary_entries")
       .select("id, diary_date, ended_at, span_started_at, title, body, did, failed, learned, open_threads, tags, pr_urls, files_touched, stats, cc_sessions(project_name, git_branch)")
@@ -272,7 +293,7 @@ async function main() {
   }
   const pending = (queue ?? []).filter((r) => r.status === "pending" || r.status === "generating").length;
   const failed = (queue ?? []).filter((r) => r.status === "failed").length;
-  start(data, `${data.length}件${pending ? ` · 生成待ち ${pending}` : ""}${failed ? ` · <span class="warn">失敗 ${failed}</span>` : ""}`);
+  start(data, `${data.length}件${pending ? ` · 生成待ち ${pending}` : ""}${failed ? ` · <span class="warn">失敗 ${failed}</span>` : ""}${visitorsHtml(visitStats)}`);
 }
 
 main();
