@@ -1,7 +1,9 @@
 #!/usr/bin/env bun
 // agent-diary: Claude Code のセッションが終わるたびに、そのセッションの日記を Claude Code 自身に書かせる。
 import { basename } from "node:path";
-import { mkdirSync, readdirSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { Glob } from "bun";
 import { join } from "node:path";
 import { loadConfig, PATHS } from "./config.ts";
 import { runHook } from "./hook.ts";
@@ -15,6 +17,7 @@ const USAGE = `agent-diary <command>
   show [日付]               日記を表示する。日付は YYYY-MM-DD / today / yesterday（省略時 today）
   status                    処理状態の件数と直近の失敗を表示する
   enqueue <transcript.jsonl>...  既存のトランスクリプトを手動でキューに入れる（終了時刻はトランスクリプト最後のメッセージ）
+  backfill [--days N] [--dry-run]  直近 N 日（既定7）に最後のメッセージがある対話セッションをまとめてキューに入れ、日記を書く
   retry                     失敗した行の試行回数を戻して再生成の対象にする
   db-url                    supabase status から .env の DATABASE_URL を更新する
   site                      日記サイトの URL と持ち主を表示する
@@ -107,6 +110,46 @@ async function enqueue(paths: string[]) {
   await runWorker();
 }
 
+// 直近 days 日の対話セッションを探してキューに入れる。DB にある行とは (session_id, ended_at) で重ならない
+async function backfill(args: string[]) {
+  const daysIdx = args.indexOf("--days");
+  const days = daysIdx >= 0 ? Number(args[daysIdx + 1]) : 7;
+  const dryRun = args.includes("--dry-run");
+  if (!Number.isFinite(days) || days <= 0) throw new Error("--days には正の数を指定してください");
+  const since = Date.now() - days * 86_400_000;
+  const cfg = loadConfig();
+  const root = join(homedir(), ".claude", "projects");
+  const picked: { path: string; sid: string; cwd: string; last: string; prompts: number }[] = [];
+  const skipped: Record<string, number> = {};
+  for await (const rel of new Glob("*/*.jsonl").scan({ cwd: root, dot: true })) {
+    const path = join(root, rel);
+    // 更新日時が窓より古いファイルは読まない
+    if (statSync(path).mtimeMs < since) continue;
+    const d = await parseTranscript(path);
+    const why = !d.lastEventAt || Date.parse(d.lastEventAt) < since ? "out_of_window"
+      : d.entrypoint && !cfg.entrypoints.includes(d.entrypoint) ? `entrypoint:${d.entrypoint}`
+      : d.stats.user_prompts === 0 ? "no_user_prompt" : null;
+    if (why) {
+      skipped[why] = (skipped[why] ?? 0) + 1;
+      continue;
+    }
+    picked.push({ path, sid: d.sessionId ?? basename(path, ".jsonl"), cwd: d.cwd ?? "", last: d.lastEventAt!, prompts: d.stats.user_prompts });
+  }
+  picked.sort((a, b) => a.last.localeCompare(b.last));
+  console.log(JSON.stringify({ days, picked: picked.length, prompts: picked.reduce((n, p) => n + p.prompts, 0), skipped }, null, 2));
+  if (dryRun) return;
+  mkdirSync(PATHS.spool, { recursive: true });
+  for (const p of picked) {
+    const input = { session_id: p.sid, transcript_path: p.path, cwd: p.cwd, hook_event_name: "backfill", reason: "backfill" };
+    const name = `${Date.now()}-${p.sid}.json`;
+    const tmp = join(PATHS.spool, `.${name}.tmp`);
+    writeFileSync(tmp, JSON.stringify({ received_at: p.last, input }));
+    renameSync(tmp, join(PATHS.spool, name));
+  }
+  console.log(`${picked.length} 件をキューに入れた。日記を書く（モデル: ${cfg.model}）`);
+  await runWorker();
+}
+
 async function retry() {
   const db = requireDb();
   const r = await db`update public.diary_entries set status = 'pending', attempts = 0 where status = 'failed' returning id`;
@@ -131,6 +174,9 @@ switch (cmd) {
     break;
   case "enqueue":
     await enqueue(rest);
+    break;
+  case "backfill":
+    await backfill(rest);
     break;
   case "retry":
     await retry();

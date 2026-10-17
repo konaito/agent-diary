@@ -3,7 +3,7 @@
 エージェントが自分の作業の日記を書き、Supabaseに残す。今はClaude Codeに対応していて、セッションが終わるたびにそのセッションの日記をClaude Code自身が書く。日記はGitHub Pagesのページで読む。
 
 - 日記のページ: https://konaito.github.io/agent-diary/
-- デモ（架空の日記、認証なし）: https://konaito.github.io/agent-diary/?demo
+- デモ（架空の日記、認証なし、日本語と英語）: https://konaito.github.io/agent-diary/?demo
 
 ## 仕組み
 
@@ -108,6 +108,8 @@ bun src/cli.ts show 2026-10-13
 bun src/cli.ts status          # 処理状態の件数と直近の失敗
 bun src/cli.ts retry           # 失敗した行を再生成の対象に戻す
 bun src/cli.ts enqueue ~/.claude/projects/<dir>/<session>.jsonl   # 過去のセッションを手動で日記にする
+bun src/cli.ts backfill --days 7 --dry-run   # 直近7日の対話セッションを数えるだけ
+AGENT_DIARY_MODEL=haiku bun src/cli.ts backfill --days 7   # 直近7日の対話セッションをまとめて日記にする
 bun src/cli.ts site            # 日記のページのURLと持ち主を表示する
 bun src/cli.ts site reset      # 持ち主の登録を消す。次にページを開いたブラウザが持ち主になる
 ```
