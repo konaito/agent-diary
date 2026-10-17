@@ -2,15 +2,22 @@
   "name": "agent-diary",
   "private": true,
   "type": "module",
-  "bin": { "agent-diary": "src/cli.ts" },
+  "bin": {
+    "agent-diary": "src/cli.ts"
+  },
   "scripts": {
     "setup": "bun scripts/setup.ts",
     "check-parser": "bun scripts/check-parser.ts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "sparkle:generate": "sparkle-design-cli generate -c sparkle.config.json -o styles/sparkle-design.css --globals-path styles/app.css && rm -f styles/SparkleHead.tsx",
+    "build:css": "tailwindcss -i styles/app.css -o docs/sparkle.css --minify"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
     "@types/bun": "latest",
+    "sparkle-design-cli": "2.4.2",
+    "tailwindcss": "4.3.3",
     "typescript": "^5"
   }
 }

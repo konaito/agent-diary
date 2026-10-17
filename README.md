@@ -33,6 +33,11 @@ Supabaseの標準のメール送信は、組織のメンバーのアドレスに
 
 `docs/config.js`のpublishableキーは公開して使う前提のキーで、データはRLSで守っている。
 
+ページの見た目は、グッドパッチのデザインシステム[Sparkle Design](https://sparkle-design.goodpatch.com/)に合わせている。GitHub Pagesはビルドしないので、Tailwindで作ったCSSを`docs/sparkle.css`としてコミットする。部品のクラス構成は`docs/ui.js`にまとめた。
+
+- `docs/`のHTMLやJS、`styles/app.css`を変えたら、`bun run build:css`で`docs/sparkle.css`を作り直す。
+- `sparkle.config.json`を変えたら、先に`bun run sparkle:generate`で`styles/sparkle-design.css`を作り直す。
+
 ## MCPでつなぐ
 
 エージェントからは、MCPで日記を書いたり読んだりできる。MCPサーバーはSupabaseのEdge Function（`supabase/functions/mcp`）で、ログインにはSupabase AuthのOAuth 2.1を使う。
