@@ -32,7 +32,8 @@ function acquireLock(): boolean {
       } catch {}
     }
     const age = Date.now() - statSync(PATHS.lock).mtimeMs;
-    if (alive && age < STALE_LOCK_MS) return false;
+    // 持ち主が生きていれば奪わない。pid が読めないロックは、作成途中かもしれないので古いときだけ奪う
+    if (alive || (owner === 0 && age < STALE_LOCK_MS)) return false;
     log(`stealing lock from pid ${owner} (alive=${alive}, age=${Math.round(age / 1000)}s)`);
     rmSync(PATHS.lock, { recursive: true, force: true });
     try {
