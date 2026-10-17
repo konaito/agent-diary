@@ -58,6 +58,7 @@
     font: 12px var(--mono); color: var(--ink-soft);
     min-height: 44px; padding: 0 2px;
   }
+  .lang-link { display: inline-flex; align-items: center; text-decoration: none; color: var(--shu); }
   .acct-btn .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--shu); margin-right: 6px; vertical-align: 1px; }
 
   /* ---------- 検索と絞り込み ---------- */
@@ -207,6 +208,7 @@
 <header class="bar">
   <a class="brand" href="./">agent<b>/</b>diary</a>
   <div class="counts" id="counts"></div>
+  <a class="acct-btn lang-link" id="langLink" hidden></a>
   <button class="acct-btn" id="acctBtn" hidden></button>
 </header>
 <div class="filters" id="tools" hidden>
@@ -220,7 +222,7 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/+esm";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
-import { DEMO_ENTRIES } from "./demo.js";
+import { DEMO_ENTRIES, DEMO_ENTRIES_EN } from "./demo.js";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   // 保存名は改名前のまま。変えると、今ログインしているブラウザが持ち主として読めなくなる
@@ -228,14 +230,73 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 const $ = (id) => document.getElementById(id);
 const root = $("root");
-const WEEK = "日月火水木金土";
+// ---------- 言語 ----------
+// 日記の持ち主の画面は日本語。デモだけ英語と日本語を切り替えられる
+const I18N = {
+  ja: {
+    weekdays: ["日", "月", "火", "水", "木", "金", "土"],
+    search: "検索",
+    all: "すべて",
+    empty: "該当する日記はない。",
+    none: "日記はまだない。Claude Codeのセッションを閉じると、ここに増える。",
+    dayMeta: (y, wd, n) => `${y} ${wd}曜 · ${n}件`,
+    index: (day, wd) => `${day}日（${wd}）`,
+    meta: (p, t) => `依頼 ${p} · ツール ${t}`,
+    more: "くわしく",
+    did: "やったこと",
+    failed: "うまくいかなかったこと",
+    learned: "分かったこと",
+    open: "残っていること",
+    files: "書き込んだファイル",
+    demo: "デモ",
+    basis: "架空の日記",
+    visitors: (n) => `訪れた人 ${n}`,
+    switchTo: { lang: "en", label: "English" },
+  },
+  en: {
+    weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    search: "Search",
+    all: "All",
+    empty: "No matching entries.",
+    none: "No entries yet.",
+    dayMeta: (y, wd, n) => `${y} ${wd} · ${n} ${n === 1 ? "entry" : "entries"}`,
+    index: (day, wd) => `${wd} ${day}`,
+    meta: (p, t) => `${p} requests · ${t} tool calls`,
+    more: "Details",
+    did: "Done",
+    failed: "Didn't work",
+    learned: "Learned",
+    open: "Still open",
+    files: "Files written",
+    demo: "Demo",
+    basis: "fictional entries",
+    visitors: (n) => `${n} ${n === 1 ? "visitor" : "visitors"}`,
+    switchTo: { lang: "ja", label: "日本語" },
+  },
+};
+let LANG = "ja";
+const L = () => I18N[LANG];
+
+// デモの言語。?lang= の指定、前回選んだ言語、ブラウザの言語の順で決める
+function demoLang() {
+  const q = new URLSearchParams(location.search).get("lang");
+  if (q === "en" || q === "ja") {
+    try { localStorage.setItem("agent-diary-lang", q); } catch {}
+    return q;
+  }
+  try {
+    const saved = localStorage.getItem("agent-diary-lang");
+    if (saved === "en" || saved === "ja") return saved;
+  } catch {}
+  return (navigator.languages?.[0] ?? navigator.language ?? "ja").toLowerCase().startsWith("ja") ? "ja" : "en";
+}
 const PAGE_URL = location.origin + location.pathname;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const inline = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 const hm = (iso) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
 // 日付文字列の曜日。暦日として UTC で計算するのでブラウザのタイムゾーンに左右されない
-const wday = (d) => WEEK[new Date(`${d}T00:00:00Z`).getUTCDay()];
+const wday = (d) => L().weekdays[new Date(`${d}T00:00:00Z`).getUTCDay()];
 const tokyoDay = (iso) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date(iso));
 
 // Supabase のエラーを短い日本語にする
@@ -407,7 +468,7 @@ function render() {
   });
   const stream = $("stream");
   if (shown.length === 0) {
-    stream.innerHTML = `<p class="empty">${entries.length ? "該当する日記はない。" : "日記はまだない。Claude Code のセッションを閉じると、ここに増える。"}</p>`;
+    stream.innerHTML = `<p class="empty">${entries.length ? L().empty : L().none}</p>`;
     $("strip").innerHTML = "";
     $("index").innerHTML = "";
     return;
@@ -428,7 +489,7 @@ function render() {
       index += `<div class="month">${month.replace("-", ".")}</div>`;
       lastMonth = month;
     }
-    index += `<a href="#d-${d}"><span>${Number(d.slice(8))}日（${wday(d)}）</span><span>${list.length}</span></a>`;
+    index += `<a href="#d-${d}"><span>${L().index(Number(d.slice(8)), wday(d))}</span><span>${list.length}</span></a>`;
   }
 
   let html = "";
@@ -437,7 +498,7 @@ function render() {
     const projects = [...new Set(list.map((e) => e.cc_sessions?.project_name).filter(Boolean))];
     html += `<section class="day" id="d-${d}" style="animation-delay:${Math.min(i++, 6) * 50}ms">
       <div class="day-head"><span class="day-num">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
-      <span class="day-meta">${d.slice(0, 4)} ${wday(d)}曜 · ${list.length}件<br>${esc(projects.join(" / "))}</span></div>`;
+      <span class="day-meta">${L().dayMeta(d.slice(0, 4), wday(d), list.length)}<br>${esc(projects.join(" / "))}</span></div>`;
     for (const e of [...list].reverse()) {
       const startDay = e.span_started_at ? tokyoDay(e.span_started_at) : d;
       const span = e.span_started_at
@@ -445,14 +506,14 @@ function render() {
         : hm(e.ended_at);
       const sec = (label, xs, bad) => (xs.length ? `<div><h3 class="${bad ? "bad" : ""}">${label}</h3><ul>${xs.map((x) => `<li>${inline(x)}</li>`).join("")}</ul></div>` : "");
       const lists =
-        sec("やったこと", e.did) + sec("うまくいかなかったこと", e.failed, true) + sec("分かったこと", e.learned) + sec("残っていること", e.open_threads) +
+        sec(L().did, e.did) + sec(L().failed, e.failed, true) + sec(L().learned, e.learned) + sec(L().open, e.open_threads) +
         (e.pr_urls.length ? `<div><h3>PR</h3><ul>${e.pr_urls.map((u) => `<li><a href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u.replace("https://github.com/", ""))}</a></li>`).join("")}</ul></div>` : "") +
-        (e.files_touched.length ? `<div><h3>書き込んだファイル</h3><ul>${e.files_touched.map((f) => `<li><code>${esc(f)}</code></li>`).join("")}</ul></div>` : "");
+        (e.files_touched.length ? `<div><h3>${L().files}</h3><ul>${e.files_touched.map((f) => `<li><code>${esc(f)}</code></li>`).join("")}</ul></div>` : "");
       html += `<article class="entry">
         <h2>${esc(e.title)}</h2>
-        <div class="meta">${span} · <span class="proj">${esc(e.cc_sessions?.project_name ?? "")}</span>${e.cc_sessions?.git_branch ? ` (${esc(e.cc_sessions.git_branch)})` : ""} · 依頼 ${e.stats?.user_prompts ?? "?"} · ツール ${e.stats?.tool_calls ?? "?"}</div>
+        <div class="meta">${span} · <span class="proj">${esc(e.cc_sessions?.project_name ?? "")}</span>${e.cc_sessions?.git_branch ? ` (${esc(e.cc_sessions.git_branch)})` : ""} · ${L().meta(e.stats?.user_prompts ?? "?", e.stats?.tool_calls ?? "?")}</div>
         <div class="body">${e.body.split(/\n{2,}/).map((p) => `<p>${inline(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>
-        ${lists ? `<details><summary>くわしく</summary><div class="lists">${lists}</div></details>` : ""}
+        ${lists ? `<details><summary>${L().more}</summary><div class="lists">${lists}</div></details>` : ""}
         ${e.tags.length ? `<div class="tags">${e.tags.map((t) => `<button type="button" data-tag="${esc(t)}">#${esc(t)}</button>`).join("")}</div>` : ""}
       </article>`;
     }
@@ -468,7 +529,8 @@ function start(list, countsHtml, calloutHtml = "") {
   $("counts").innerHTML = countsHtml;
   root.innerHTML = `<nav class="strip" id="strip"></nav><div class="layout"><nav class="index" id="index"></nav><main class="stream">${calloutHtml}<div id="stream"></div></main></div>`;
   const projects = [...new Set(entries.map((e) => e.cc_sessions?.project_name).filter(Boolean))].sort();
-  $("proj").innerHTML = `<option value="">すべて</option>` + projects.map((p) => `<option>${esc(p)}</option>`).join("");
+  $("proj").innerHTML = `<option value="">${L().all}</option>` + projects.map((p) => `<option>${esc(p)}</option>`).join("");
+  $("q").placeholder = L().search;
   $("tools").hidden = false;
   render();
 }
@@ -489,12 +551,13 @@ $("proj").addEventListener("change", () => render());
 // ---------- デモの説明 ----------
 
 const REPO_URL = "https://github.com/konaito/agent-diary";
-const ABOUT_HTML = `
+const ABOUT = {
+  ja: `
   <section class="about" aria-labelledby="about-title">
     <div class="kicker">このページについて</div>
     <h2 id="about-title">エージェントが書く作業日記</h2>
     <p>agent-diaryは、AIエージェントが自分の作業の日記を書く仕組みだ。今はClaude Codeに対応していて、セッションを閉じるたびに、そのセッションでやったことをClaude Code自身が日記にする。</p>
-    <p><strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物で、本物の日記と同じ形にしてある。</p>
+    <p><strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物だが、書き方と細かさは、実際に生成された日記に合わせてある。</p>
     <ol>
       <li>Claude Codeのセッションが終わると、SessionEndフックがその会話の記録を受け取る。ターミナルのウィンドウを閉じたときも動く。</li>
       <li>依頼、返答、ツールの操作を時刻つきの経過記録に縮める。書き込んだファイルやPRは記録から機械的に拾う。</li>
@@ -508,14 +571,35 @@ const ABOUT_HTML = `
       <a href="${REPO_URL}#otpを選んだ理由" target="_blank" rel="noreferrer">OTPを選んだ理由</a>
       <a href="./">日記のページへ戻る</a>
     </div>
-  </section>`;
+  </section>`,
+  en: `
+  <section class="about" aria-labelledby="about-title">
+    <div class="kicker">About this page</div>
+    <h2 id="about-title">A work diary written by agents</h2>
+    <p>agent-diary lets an AI agent keep a diary of its own work. It currently supports Claude Code: each time a session ends, Claude Code writes an entry about what it did in that session.</p>
+    <p><strong>The entries below are fictional.</strong> The projects and events are made up, but the style and level of detail match entries that agent-diary actually generated.</p>
+    <ol>
+      <li>When a Claude Code session ends, a SessionEnd hook receives the conversation transcript. It also runs when the terminal window is closed.</li>
+      <li>Requests, replies and tool calls are condensed into a timestamped log. Files written and pull requests are picked up from the transcript mechanically.</li>
+      <li>Claude Code is given the log and writes the entry. It is told not to write anything that is not in the log.</li>
+      <li>The entry is stored in Supabase and shown on this page by date.</li>
+    </ol>
+    <p>Open “Details” on an entry to see what was done, what didn't work, what was learned and what is still open. Tap a tag to filter by it.</p>
+    <p>Real entries are visible only to the owner, who signs in on any device with a numeric code sent by email.</p>
+    <div class="links">
+      <a href="${REPO_URL}" target="_blank" rel="noreferrer">How it works on GitHub</a>
+      <a href="${REPO_URL}#otpを選んだ理由" target="_blank" rel="noreferrer">Why a one-time code</a>
+      <a href="./">Back to the diary</a>
+    </div>
+  </section>`,
+};
 
 // ---------- 画面の切り替え ----------
 
 function showLocked(stats) {
   $("counts").textContent = visitorsText(stats);
   notice("閉じています", "この日記は、持ち主だけが読める。", `
-    <p><a class="demo-link" href="?demo">架空の日記でデモを見る</a></p>
+    <p><a class="demo-link" href="?demo&lang=ja">デモを見る</a> · <a class="demo-link" href="?demo&lang=en" lang="en">See the demo in English</a></p>
     <details class="fold"><summary>持ち主ならメールでログイン</summary><div id="loginForm"></div></details>`);
   codeForm($("loginForm"), {
     sendLabel: "コードを送る",
@@ -544,8 +628,20 @@ async function main() {
     }
   }
   if (demo) {
+    LANG = demoLang();
+    document.documentElement.lang = LANG;
     const stats = user ? await recordVisit("demo") : null;
-    start(DEMO_ENTRIES, `<span class="warn">デモ</span> · 架空の日記${stats ? ` · ${visitorsText(stats)}` : ""}`, ABOUT_HTML);
+    const sw = L().switchTo;
+    const link = $("langLink");
+    link.href = `?demo&lang=${sw.lang}`;
+    link.lang = sw.lang;
+    link.textContent = sw.label;
+    link.hidden = false;
+    start(
+      LANG === "en" ? DEMO_ENTRIES_EN : DEMO_ENTRIES,
+      `<span class="warn">${L().demo}</span> · ${L().basis}${stats ? ` · ${L().visitors(stats.visitors)}` : ""}`,
+      ABOUT[LANG],
+    );
     return;
   }
   let owner;
