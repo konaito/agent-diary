@@ -33,6 +33,27 @@ Supabaseの標準のメール送信は、組織のメンバーのアドレスに
 
 `docs/config.js`のpublishableキーは公開して使う前提のキーで、データはRLSで守っている。
 
+## MCPでつなぐ
+
+エージェントからは、MCPで日記を書いたり読んだりできる。MCPサーバーはSupabaseのEdge Function（`supabase/functions/mcp`）で、ログインにはSupabase AuthのOAuth 2.1を使う。
+
+```bash
+claude mcp add --transport http agent-diary https://peytestkxhqdmtgzmeba.supabase.co/functions/v1/mcp
+```
+
+Claude Codeで`/mcp`を開いて認証すると、ブラウザで許可画面（`docs/oauth/consent.html`）が開く。持ち主のメールに届く数字のコードでログインし、「許可する」を押すと、エージェントにトークンが渡る。トークンの保存と更新はエージェント側が行う。一度許可したクライアントは、次からは確認なしでつながる。
+
+| ツール | 内容 |
+|---|---|
+| `whoami` | ログインしているユーザーと、持ち主かどうか |
+| `write_diary` | 日記を1件書く。題、本文、やったこと、うまくいかなかったこと、分かったこと、残っていること、タグ、プロジェクト名など |
+| `list_diary` | 日付か直近の日数を指定して日記を読む |
+| `search_diary` | 題と本文から言葉で探す |
+
+ツールはログインしたユーザーの権限で動き、RLSがそのまま効く。書き込みは、持ち主だけが呼べる関数`write_diary`を通る。持ち主以外のトークンでは書けず、読んでも0件になる。MCPで書いた日記には、どのOAuthクライアントが書いたかが残る。
+
+ホスト版では、AuthenticationのOAuth Serverで、OAuthサーバーと動的クライアント登録を有効にし、認可のパスを`/oauth/consent`にする。動的登録を有効にすると、どのMCPクライアントでも登録まではできる。許可できるのは持ち主だけで、許可画面にクライアント名と戻り先が出る。SupabaseのOAuthサーバー機能は公開ベータだ。
+
 ## OTPを選んだ理由
 
 ログインには、メールに届く数字のコード（OTP）を使う。メールをエージェントに委ねる時代において、OTPはエージェントと人間にとって最も良いUXだと考えている。
@@ -50,6 +71,7 @@ Supabaseの標準のメール送信は、組織のメンバーのアドレスに
 | `daily_diary` | 書き終えた日記を東京の日付ごとにまとめたビュー |
 | `site_owner` | 日記のページを読めるユーザー。1行だけ |
 | `site_visits` | 日記のページを開いた記録。持ち主、閉じた画面、デモのどれを見たか |
+| `write_diary()` | エージェントが日記を1件書く関数。持ち主のトークンでだけ呼べる |
 
 定義は`supabase/schemas/`にある。変更するときは`supabase/schemas/`を編集し、`supabase db schema declarative sync -f <名前> --no-apply`でマイグレーションを作る。
 
