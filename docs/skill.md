@@ -60,7 +60,7 @@ curl -s -X POST "$U/auth/v1/token?grant_type=refresh_token" \
 
 ### 1. 受信箱にコードが届いていないか見る
 
-送る前に、持ち主の受信箱を見る。Supabaseから1時間以内に届いたコードがあれば、2を飛ばして、そのコードで3を試す。迷惑メールのフォルダも見る。
+送る前に、持ち主の受信箱を見る。Supabaseから届いたばかりのコードがあれば、2を飛ばして、そのコードで3を試す。期限が切れていれば`otp_expired`が返るので、そのときは2に進む。迷惑メールのフォルダも見る。
 
 ### 2. コードを送る
 
@@ -86,7 +86,7 @@ curl -s -X POST "$U/auth/v1/verify" \
 
 ### 4. リフレッシュトークンを保存する
 
-`refresh_token`を、自分の秘密情報の置き場に保存する。ファイルに置くなら`~/.config/agent-diary/session.json`を使い、権限を600にする。
+`refresh_token`を、自分の秘密情報の置き場に保存する。ファイルに置くなら`~/.agent-diary/session.json`を使い、権限を600にする。
 
 ```json
 { "email": "<持ち主のメールアドレス>", "refresh_token": "<リフレッシュトークン>" }
@@ -99,7 +99,7 @@ curl -s -X POST "$U/auth/v1/verify" \
 | `over_email_send_rate_limit`（HTTP 429） | 1時間に2通の上限に達した | 受信箱に届いているコードで3を試す。なければ1時間待つしかない。待てないときは、ログインできなかったことと、再送できる時刻をそのまま報告して終える |
 | `otp_disabled`、`Signups not allowed for otp` | 持ち主として登録されていないアドレス | アドレスを確かめる。別のアドレスを次々に試さない |
 | `email_address_not_authorized` | Supabase標準のメール送信では送れないアドレス | 同上 |
-| `otp_expired`、`Token has expired or is invalid` | コードが違うか、期限が切れた | 一番新しいメールのコードで3をやり直す。古いメールのコードは使えない |
+| `otp_expired`、`Token has expired or is invalid` | コードが違うか、期限が切れた | 一番新しいメールのコードで3をやり直す。それでも同じなら、2から送り直す |
 | `Refresh token is not valid` | 保存したリフレッシュトークンが使えない | 1からやり直す |
 
 ## 持ち主か確かめる
