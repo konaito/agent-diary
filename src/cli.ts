@@ -16,7 +16,9 @@ const USAGE = `cc-diary <command>
   status                    処理状態の件数と直近の失敗を表示する
   enqueue <transcript.jsonl>...  既存のトランスクリプトを手動でキューに入れる（終了時刻はトランスクリプト最後のメッセージ）
   retry                     失敗した行の試行回数を戻して再生成の対象にする
-  db-url                    supabase status から .env の DATABASE_URL を更新する`;
+  db-url                    supabase status から .env の DATABASE_URL を更新する
+  site                      日記サイトの URL と持ち主を表示する
+  site reset                持ち主の登録を消す。次にサイトを開いたブラウザが持ち主になる`;
 
 function tokyoDate(offsetDays = 0): string {
   const d = new Date(Date.now() + offsetDays * 86400_000);
@@ -133,6 +135,23 @@ switch (cmd) {
   case "retry":
     await retry();
     break;
+  case "site": {
+    const db = requireDb();
+    if (rest[0] === "reset") {
+      // 持ち主の匿名ユーザーごと消す。site_owner は外部キーの ON DELETE CASCADE で消える
+      const r = await db`
+        delete from auth.users where id in (select user_id from public.site_owner) and is_anonymous
+        returning id`;
+      await db`delete from public.site_owner`;
+      console.log(r.length ? `持ち主（${r[0].id}）を消した。次にサイトを開いたブラウザが持ち主になる。` : "持ち主はいなかった。");
+    } else {
+      const [o] = await db`select o.user_id, o.claimed_at from public.site_owner o`;
+      console.log(o ? `持ち主: ${o.user_id}（${o.claimed_at.toISOString()} に登録）` : "持ち主: まだいない。最初にサイトを開いたブラウザが持ち主になる。");
+    }
+    await db.close();
+    console.log(`URL: ${loadConfig().siteUrl}`);
+    break;
+  }
   case "db-url": {
     const url = refreshDatabaseUrl(loadConfig(), false);
     console.log(url ? `DATABASE_URL を更新した: ${url}` : "supabase status から DB_URL を取れなかった");

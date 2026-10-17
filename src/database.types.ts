@@ -57,6 +57,20 @@ isOneToOne: false
       referencedColumns: ["session_id"]
     }
                   ]
+                },"site_owner": {
+                  Row: {
+                    "claimed_at": string,"singleton": boolean,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "claimed_at"?: string,"singleton"?: boolean,"user_id": string
+                  }
+                  Update: {
+                    "claimed_at"?: string,"singleton"?: boolean,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
@@ -71,7 +85,12 @@ isOneToOne: false
                 }
           }
           Functions: {
-            [_ in never]: never
+            "claim_site":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_site_owner":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           }
           }
           Enums: {
             "diary_entry_status": "pending"|"generating"|"written"|"skipped"|"failed"

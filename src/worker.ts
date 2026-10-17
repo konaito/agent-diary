@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SQL } from "bun";
-import { type Config, loadConfig, PATHS, PROJECT_ROOT } from "./config.ts";
+import { type Config, isLocalDatabase, loadConfig, PATHS, PROJECT_ROOT } from "./config.ts";
 import { generateDiary } from "./generate.ts";
 import { log } from "./log.ts";
 import { CursorNotFoundError, parseTranscript, renderDigest } from "./transcript.ts";
@@ -89,6 +89,11 @@ async function connectWithAutostart(cfg: Config): Promise<SQL | null> {
   if (cfg.databaseUrl) {
     const db = await ping(cfg.databaseUrl);
     if (db) return db;
+    // ホスト版の Supabase に届かないときは起動のしようがないので、スプールを残して次回に回す
+    if (!isLocalDatabase(cfg.databaseUrl)) {
+      log(`database not reachable at ${cfg.databaseUrl.replace(/:[^:@/]*@/, ":***@")}`);
+      return null;
+    }
     log(`database not reachable at ${cfg.databaseUrl.replace(/:[^:@/]*@/, ":***@")}; trying supabase start`);
   }
   const url = refreshDatabaseUrl(cfg, true);

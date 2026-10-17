@@ -41,6 +41,17 @@ export function loadConfig() {
     claudeBin: env.CC_DIARY_CLAUDE_BIN ?? Bun.which("claude") ?? join(homedir(), ".local/bin/claude"),
     supabaseBin: env.CC_DIARY_SUPABASE_BIN ?? Bun.which("supabase") ?? "/opt/homebrew/bin/supabase",
     generateTimeoutMs: Number(env.CC_DIARY_TIMEOUT_MS ?? 300_000),
+    siteUrl: env.CC_DIARY_SITE_URL ?? "https://konaito.github.io/cc-diary/",
   };
 }
 export type Config = ReturnType<typeof loadConfig>;
+
+/** 接続先がこのマシンのローカル Supabase かどうか */
+export function isLocalDatabase(url: string | null): boolean {
+  if (!url) return false;
+  try {
+    return ["127.0.0.1", "localhost", "::1"].includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}

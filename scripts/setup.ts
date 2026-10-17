@@ -5,7 +5,7 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { CLI_PATH, loadConfig } from "../src/config.ts";
+import { CLI_PATH, isLocalDatabase, loadConfig } from "../src/config.ts";
 import { refreshDatabaseUrl } from "../src/worker.ts";
 
 const MARK = "# cc-diary";
@@ -17,12 +17,18 @@ if (process.argv.includes("--print-hook")) {
   process.exit(0);
 }
 
-const url = refreshDatabaseUrl(loadConfig(), true);
-if (!url) {
-  console.error("supabase status から DB_URL を取れなかった。Docker が動いているか確認してください。");
-  process.exit(1);
+const current = loadConfig().databaseUrl;
+if (current && !isLocalDatabase(current)) {
+  // ホスト版の Supabase を使っているときは .env をそのままにする
+  console.log("DATABASE_URL はホスト版の Supabase を指しているので変更しない");
+} else {
+  const url = refreshDatabaseUrl(loadConfig(), true);
+  if (!url) {
+    console.error("supabase status から DB_URL を取れなかった。Docker が動いているか確認してください。");
+    process.exit(1);
+  }
+  console.log(`.env に DATABASE_URL=${url} を書いた`);
 }
-console.log(`.env に DATABASE_URL=${url} を書いた`);
 
 if (process.argv.includes("--install-hook")) {
   const settingsPath = process.env.CC_DIARY_SETTINGS ?? join(homedir(), ".claude", "settings.json");
