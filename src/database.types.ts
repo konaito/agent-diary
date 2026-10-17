@@ -71,6 +71,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"site_visits": {
+                  Row: {
+                    "id": number,"user_id": string | null,"view": string,"visited_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: never,"user_id"?: string | null,"view": string,"visited_at"?: string
+                  }
+                  Update: {
+                    "id"?: never,"user_id"?: string | null,"view"?: string,"visited_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
@@ -90,6 +104,18 @@ isOneToOne: false
                            },
 "is_site_owner":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"record_visit":
+{ Args: { "p_view": string }; Returns: Json
+                           },
+"site_is_claimed":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"visit_stats":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"write_diary":
+{ Args: { "p_agent"?: string,"p_body": string,"p_did"?: (string)[],"p_ended_at"?: string,"p_failed"?: (string)[],"p_files_touched"?: (string)[],"p_git_branch"?: string,"p_learned"?: (string)[],"p_open_threads"?: (string)[],"p_pr_urls"?: (string)[],"p_project"?: string,"p_session_id"?: string,"p_started_at"?: string,"p_tags"?: (string)[],"p_title": string }; Returns: Json
                            }
           }
           Enums: {
