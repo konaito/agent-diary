@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "cc-diary",
+      "name": "agent-diary",
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5",

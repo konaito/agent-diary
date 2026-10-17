@@ -32,7 +32,7 @@ export function spawnWorker(): void {
   const child = spawn(process.execPath, [CLI_PATH, "worker"], {
     detached: true,
     stdio: ["ignore", out, out],
-    env: { ...process.env, CC_DIARY_FROM_HOOK: "1" },
+    env: { ...process.env, AGENT_DIARY_FROM_HOOK: "1" },
   });
   child.unref();
 }
