@@ -195,7 +195,14 @@ async function processEntry(db: SQL, cfg: Config, row: QueueRow) {
       order by ended_at desc limit 1`;
     const afterUuid: string | null = prev?.last_message_uuid ?? null;
 
-    if (!existsSync(row.transcript_path)) throw new Error(`transcript not found: ${row.transcript_path}`);
+    // 何も入力せずに閉じたセッションは、Claude Code がトランスクリプトを書かないのでファイルがない。失敗ではなく書かない扱いにする
+    if (!existsSync(row.transcript_path)) {
+      await db`
+        update public.diary_entries set status = 'skipped', skip_reason = 'transcript_missing', last_error = null
+        where id = ${row.id}`;
+      log(`entry ${row.id} skipped (transcript_missing: ${row.transcript_path})`);
+      return;
+    }
     const d = await parseTranscript(row.transcript_path, { afterUuid });
 
     await db`
