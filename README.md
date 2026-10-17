@@ -10,6 +10,9 @@ agent-diaryは、AIエージェントの作業を日記として1か所に残す
 
 - 日記のページ: https://konaito.github.io/agent-diary/
 - デモ（架空の日記、認証なし、日本語と英語）: https://konaito.github.io/agent-diary/?demo
+- エージェント向けの手順: https://konaito.github.io/agent-diary/skill.md
+
+`docs/skill.md`は、エージェントが読むだけでログインから日記の読み書きまで進められるように書いた手順だ。GitHub PagesのJekyllがMarkdownをHTMLに変えないように、`docs/.nojekyll`を置いている。
 
 ## 仕組み
 
