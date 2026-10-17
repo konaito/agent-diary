@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// cc-diary: Claude Code のセッションが終わるたびに、そのセッションの日記を Claude Code 自身に書かせる。
+// agent-diary: Claude Code のセッションが終わるたびに、そのセッションの日記を Claude Code 自身に書かせる。
 import { basename } from "node:path";
 import { mkdirSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -8,7 +8,7 @@ import { runHook } from "./hook.ts";
 import { parseTranscript } from "./transcript.ts";
 import { openDb, refreshDatabaseUrl, runWorker } from "./worker.ts";
 
-const USAGE = `cc-diary <command>
+const USAGE = `agent-diary <command>
 
   hook                      SessionEnd フックから呼ぶ。標準入力の JSON をスプールに置いてワーカーを起動する
   worker                    スプールを取り込み、未処理の日記を書く
@@ -28,7 +28,7 @@ function tokyoDate(offsetDays = 0): string {
 function requireDb() {
   const cfg = loadConfig();
   if (!cfg.databaseUrl) {
-    console.error("DATABASE_URL がありません。`bun run setup` か `cc-diary db-url` を実行してください。");
+    console.error("DATABASE_URL がありません。`bun run setup` か `agent-diary db-url` を実行してください。");
     process.exit(1);
   }
   return openDb(cfg.databaseUrl);
@@ -111,7 +111,7 @@ async function retry() {
   const db = requireDb();
   const r = await db`update public.diary_entries set status = 'pending', attempts = 0 where status = 'failed' returning id`;
   await db.close();
-  console.log(`${r.length} 件を pending に戻した。cc-diary worker で再生成する。`);
+  console.log(`${r.length} 件を pending に戻した。agent-diary worker で再生成する。`);
 }
 
 const [cmd, ...rest] = process.argv.slice(2);
@@ -164,7 +164,7 @@ switch (cmd) {
 } catch (e) {
   const err = e as Error & { code?: string };
   if (err.code?.startsWith("ERR_POSTGRES_CONNECTION")) {
-    console.error(`DB に接続できない（${err.code}）。~/Documents/cc-diary で supabase start してから再実行してください。`);
+    console.error(`DB に接続できない（${err.code}）。~/Documents/agent-diary で supabase start してから再実行してください。`);
   } else {
     console.error(err.message);
   }

@@ -8,7 +8,9 @@ import { join } from "node:path";
 import { CLI_PATH, isLocalDatabase, loadConfig } from "../src/config.ts";
 import { refreshDatabaseUrl } from "../src/worker.ts";
 
-const MARK = "# cc-diary";
+const MARK = "# agent-diary";
+// 改名前のフックの印。--install-hook で古い定義を置き換えるために見る
+const OLD_MARKS = ["# cc-diary"];
 const hookCommand = `${process.execPath} ${CLI_PATH} hook ${MARK}`;
 const hookEntry = { hooks: [{ type: "command", command: hookCommand, timeout: 5 }] };
 
@@ -31,15 +33,15 @@ if (current && !isLocalDatabase(current)) {
 }
 
 if (process.argv.includes("--install-hook")) {
-  const settingsPath = process.env.CC_DIARY_SETTINGS ?? join(homedir(), ".claude", "settings.json");
+  const settingsPath = process.env.AGENT_DIARY_SETTINGS ?? join(homedir(), ".claude", "settings.json");
   const original = existsSync(settingsPath) ? readFileSync(settingsPath, "utf8") : "{}";
   if (!original.trim()) throw new Error(`${settingsPath} が空なので書き換えない`);
   const settings = JSON.parse(original);
   settings.hooks ??= {};
   const list: { hooks?: { command?: string }[] }[] = (settings.hooks.SessionEnd ??= []);
-  const kept = list.filter((e) => !e.hooks?.some((h) => h.command?.includes(MARK)));
+  const kept = list.filter((e) => !e.hooks?.some((h) => [MARK, ...OLD_MARKS].some((m) => h.command?.includes(m))));
   settings.hooks.SessionEnd = [...kept, hookEntry];
-  const backup = `${settingsPath}.bak-cc-diary-${Date.now()}`;
+  const backup = `${settingsPath}.bak-agent-diary-${Date.now()}`;
   copyFileSync(settingsPath, backup);
   const next = `${JSON.stringify(settings, null, 2)}\n`;
   JSON.parse(next);

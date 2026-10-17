@@ -1,4 +1,4 @@
--- 日記エントリの処理状態。この値は cc-diary のワーカーだけが書く。
+-- 日記エントリの処理状態。この値は agent-diary のワーカーだけが書く。
 CREATE TYPE public.diary_entry_status AS ENUM (
   'pending',     -- SessionEnd を受け取り、日記の生成待ち
   'generating',  -- ワーカーが claude -p で生成中

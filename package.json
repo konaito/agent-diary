@@ -1,8 +1,8 @@
 {
-  "name": "cc-diary",
+  "name": "agent-diary",
   "private": true,
   "type": "module",
-  "bin": { "cc-diary": "src/cli.ts" },
+  "bin": { "agent-diary": "src/cli.ts" },
   "scripts": {
     "setup": "bun scripts/setup.ts",
     "check-parser": "bun scripts/check-parser.ts",
