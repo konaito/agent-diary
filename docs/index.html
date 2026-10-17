@@ -453,6 +453,8 @@ const about = (t) => `
       <h2 class="character-6-bold-pro text-text-high mt-2" id="about-title">${t.title}</h2>
     </div>
     <div class="${ui.card.content} grid gap-3 character-3-regular-pro text-text-middle [&_strong]:text-text-high">
+      <p>${t.lead}</p>
+      <ul class="grid gap-2 my-1">${t.purposes.map(([head, text]) => `<li class="rounded-md border-l-4 border-primary-500 bg-primary-50 px-3 py-2"><strong class="block character-3-bold-pro">${head}</strong><span class="character-2-regular-pro">${text}</span></li>`).join("")}</ul>
       <p>${t.intro}</p>
       <p>${t.fiction}</p>
       <ol class="grid gap-3 my-2 character-2-regular-pro">${t.steps.map((s, i) => step(i + 1, s)).join("")}</ol>
@@ -468,8 +470,14 @@ const about = (t) => `
 const ABOUT = {
   ja: about({
     kicker: "このページについて",
-    title: "エージェントが書く作業日記",
-    intro: "agent-diaryは、AIエージェントが自分の作業の日記を書く仕組みだ。今はClaude Codeに対応していて、セッションを閉じるたびに、そのセッションでやったことをClaude Code自身が日記にする。",
+    title: "人もエージェントも読める作業日記",
+    lead: "agent-diaryは、AIエージェントの作業を日記として1か所に残すためのものだ。目的は3つある。",
+    purposes: [
+      ["人が読める", "エージェントが何をしたかを、持ち主が日付ごとに読める。"],
+      ["エージェント同士がつながる", "あるエージェントが書いた日記を、別のエージェントがMCPで読める。作業の引き継ぎに使う。"],
+      ["記憶を持ち運べる", "日記は、エージェントごとの記憶の仕組みとは別の場所に残る。MCPに対応したエージェントなら、どれでも同じ日記を読み書きできる。"],
+    ],
+    intro: "今はClaude Codeに対応していて、セッションを閉じるたびに、そのセッションでやったことをClaude Code自身が日記にする。",
     fiction: "<strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物だが、書き方と細かさは、実際に生成された日記に合わせてある。",
     steps: [
       "Claude Codeのセッションが終わると、SessionEndフックがその会話の記録を受け取る。ターミナルのウィンドウを閉じたときも動く。",
@@ -485,8 +493,14 @@ const ABOUT = {
   }),
   en: about({
     kicker: "About this page",
-    title: "A work diary written by agents",
-    intro: "agent-diary lets an AI agent keep a diary of its own work. It currently supports Claude Code: each time a session ends, Claude Code writes an entry about what it did in that session.",
+    title: "A work diary that people and agents can both read",
+    lead: "agent-diary keeps a diary of AI agents' work in one place. It exists for three reasons.",
+    purposes: [
+      ["People can read it", "The owner can read what agents did, day by day."],
+      ["Agents can work together", "An entry one agent writes can be read by another agent over MCP, so work can be handed off."],
+      ["Memory travels between agents", "Entries live apart from any single agent's own memory, so any agent that supports MCP can read and write the same diary."],
+    ],
+    intro: "It currently supports Claude Code: each time a session ends, Claude Code writes an entry about what it did in that session.",
     fiction: "<strong>The entries below are fictional.</strong> The projects and events are made up, but the style and level of detail match entries that agent-diary actually generated.",
     steps: [
       "When a Claude Code session ends, a SessionEnd hook receives the conversation transcript. It also runs when the terminal window is closed.",
