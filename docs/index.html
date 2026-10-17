@@ -3,226 +3,51 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#fdfcf8">
+<meta name="theme-color" content="#ffffff">
 <title>agent-diary</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --paper: #fdfcf8;
-    --paper-2: #f4f0e6;
-    --ink: #1d1b18;
-    --ink-soft: #5d5850;
-    --ink-faint: #9a948a;
-    --rule: #e6e1d6;
-    --shu: #c23b22;
-    --mono: "IBM Plex Mono", ui-monospace, monospace;
-    --serif: "Shippori Mincho", "Hiragino Mincho ProN", serif;
-    --gutter: 16px;
-    --bar: 52px;
-  }
-  * { box-sizing: border-box; }
-  html { background: var(--paper); -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    color: var(--ink);
-    background: var(--paper);
-    font-family: var(--serif);
-    font-size: 16.5px;
-    line-height: 1.95;
-    -webkit-font-smoothing: antialiased;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  a { color: inherit; }
-  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-
-  /* ---------- 上部のバー ---------- */
-  .bar {
-    position: sticky; top: 0; z-index: 3;
-    display: flex; align-items: center; gap: 12px;
-    min-height: var(--bar);
-    padding: env(safe-area-inset-top) var(--gutter) 0;
-    background: rgba(253, 252, 248, .94);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--rule);
-  }
-  .brand { font: 14px var(--mono); letter-spacing: .08em; text-decoration: none; }
-  .brand b { color: var(--shu); font-weight: 500; }
-  .counts { font: 12px var(--mono); color: var(--ink-faint); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .counts .warn { color: var(--shu); }
-  .counts a { color: var(--ink-soft); }
-  .acct-btn {
-    margin-left: auto; flex: none;
-    font: 12px var(--mono); color: var(--ink-soft);
-    min-height: 44px; padding: 0 2px;
-  }
-  .lang-link { display: inline-flex; align-items: center; text-decoration: none; color: var(--shu); }
-  .acct-btn .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--shu); margin-right: 6px; vertical-align: 1px; }
-
-  /* ---------- 検索と絞り込み ---------- */
-  .filters { display: flex; gap: 10px; padding: 10px var(--gutter) 4px; }
-  .filters[hidden] { display: none; }
-  .filters input, .filters select {
-    font: 16px var(--mono); color: var(--ink);
-    background: transparent; border: 0; border-bottom: 1px solid var(--ink-faint);
-    padding: 8px 2px; outline: none; border-radius: 0; min-width: 0;
-    -webkit-appearance: none; appearance: none;
-  }
-  .filters input { flex: 1; }
-  .filters select { flex: 0 1 40%; background: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%) right 6px center / 6px 6px no-repeat; padding-right: 18px; }
-  .filters input:focus, .filters select:focus { border-bottom-color: var(--shu); }
-
-  /* ---------- 日付の帯（スマホ） ---------- */
-  .strip { display: flex; gap: 6px; overflow-x: auto; padding: 10px var(--gutter) 6px; scrollbar-width: none; }
-  .strip::-webkit-scrollbar { display: none; }
-  .strip a {
-    flex: none; text-decoration: none;
-    display: grid; justify-items: center;
-    min-width: 52px; padding: 6px 8px;
-    border: 1px solid var(--rule); border-radius: 3px;
-    font: 11px/1.3 var(--mono); color: var(--ink-faint);
-  }
-  .strip a b { font: 800 18px/1.2 var(--serif); color: var(--ink); }
-  .strip a:active { border-color: var(--shu); }
-
-  /* ---------- 本文 ---------- */
-  .stream { padding: 8px var(--gutter) 96px; }
-  .day { margin: 18px 0 56px; scroll-margin-top: calc(var(--bar) + 12px); animation: rise .45s ease both; }
-  .day-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 0 0 4px; }
-  .day-num { font: 800 44px/1 var(--serif); color: var(--shu); letter-spacing: -.02em; }
-  .day-meta { font: 12px/1.6 var(--mono); color: var(--ink-faint); }
-
-  .entry { padding: 18px 0 20px; border-top: 1px solid var(--rule); }
-  .entry h2 { font: 600 19px/1.55 var(--serif); margin: 0 0 4px; }
-  .entry .meta { font: 11.5px/1.7 var(--mono); color: var(--ink-faint); margin-bottom: 10px; }
-  .entry .meta .proj { color: var(--ink-soft); }
-  .entry .body p { margin: 0 0 .9em; }
-  code { font: .84em var(--mono); background: var(--paper-2); padding: 1px 4px; border-radius: 2px; word-break: break-all; }
-
-  details { margin-top: 2px; }
-  summary {
-    cursor: pointer; list-style: none;
-    display: inline-flex; align-items: center; min-height: 44px;
-    font: 12.5px var(--mono); color: var(--ink-soft);
-  }
-  summary::-webkit-details-marker { display: none; }
-  summary::before { content: "＋"; color: var(--shu); margin-right: 6px; }
-  details[open] summary::before { content: "－"; }
-  .lists { display: grid; gap: 14px; margin: 4px 0 6px; padding-left: 12px; border-left: 2px solid var(--rule); }
-  .lists h3 { font: 500 11px var(--mono); letter-spacing: .1em; color: var(--ink-soft); margin: 0; }
-  .lists h3.bad { color: var(--shu); }
-  .lists ul { margin: 2px 0 0; padding-left: 1.1em; font-size: 15px; line-height: 1.8; }
-  .lists a { word-break: break-all; }
-  .tags { display: flex; flex-wrap: wrap; gap: 0 4px; margin-top: 4px; }
-  .tags button { font: 12px var(--mono); color: var(--ink-faint); min-height: 36px; padding: 0 6px 0 0; }
-  .tags button:active { color: var(--shu); }
-
-  /* ---------- お知らせ、ログイン ---------- */
-  .callout {
-    margin: 14px 0 4px; padding: 12px 14px;
-    background: var(--paper-2); border-left: 3px solid var(--shu);
-    font-size: 14.5px; line-height: 1.8;
-  }
-  .callout button { color: var(--shu); text-decoration: underline; font-family: var(--mono); font-size: 13px; }
-  /* ---------- デモの説明 ---------- */
-  .about { margin: 12px 0 44px; padding: 20px 18px 8px; background: #fff; border: 1px solid var(--rule); border-radius: 4px; }
-  .about .kicker { font: 11px var(--mono); letter-spacing: .12em; color: var(--shu); }
-  .about h2 { font: 800 24px/1.45 var(--serif); margin: 4px 0 10px; }
-  .about p { font-size: 15.5px; line-height: 1.9; margin: 0 0 .9em; color: var(--ink-soft); }
-  .about p strong { color: var(--ink); font-weight: 600; }
-  .about ol { list-style: none; counter-reset: step; margin: 6px 0 16px; padding: 0; display: grid; gap: 10px; }
-  .about li { counter-increment: step; display: grid; grid-template-columns: 28px 1fr; gap: 0 8px; font-size: 14.5px; line-height: 1.75; }
-  .about li::before { content: counter(step, decimal-leading-zero); font: 500 12px/2 var(--mono); color: var(--shu); }
-  .about .links { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 10px 0 12px; border-top: 1px dashed var(--rule); }
-  .about .links a { font: 13px var(--mono); color: var(--shu); min-height: 36px; display: inline-flex; align-items: center; }
-  .notice { padding: 14vh var(--gutter) 40px; text-align: center; }
-  .notice .big { font: 800 40px/1.3 var(--serif); color: var(--shu); }
-  .notice p { color: var(--ink-soft); margin: 10px 0; }
-  .demo-link { font: 14px var(--mono); color: var(--shu); }
-  .empty { color: var(--ink-faint); font: 13px var(--mono); padding: 24px 0; }
-
-  .form { display: grid; gap: 10px; text-align: left; max-width: 360px; margin: 28px auto 0; }
-  .form label { font: 12px var(--mono); color: var(--ink-soft); }
-  .form input {
-    font: 16px var(--mono); color: var(--ink);
-    padding: 12px; border: 1px solid var(--rule); border-radius: 3px; background: #fff; outline: none; width: 100%;
-  }
-  .form input:focus { border-color: var(--shu); }
-  .form input.code { letter-spacing: .3em; text-align: center; font-size: 20px; }
-  .btn {
-    min-height: 46px; border-radius: 3px;
-    background: var(--ink); color: var(--paper);
-    font: 14px var(--mono); letter-spacing: .04em;
-  }
-  .btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--rule); }
-  .btn:disabled { opacity: .5; }
-  .msg { font: 12.5px/1.7 var(--mono); color: var(--ink-soft); min-height: 1.7em; }
-  .msg.err { color: var(--shu); }
-  .fold { margin-top: 36px; }
-  .fold summary { justify-content: center; width: 100%; }
-
-  /* ---------- アカウント（下から出るシート） ---------- */
-  .sheet-bg { position: fixed; inset: 0; z-index: 5; background: rgba(29, 27, 24, .28); }
-  .sheet {
-    position: fixed; z-index: 6; left: 0; right: 0; bottom: 0;
-    max-height: 85vh; overflow: auto;
-    background: var(--paper);
-    border-top: 1px solid var(--rule);
-    border-radius: 10px 10px 0 0;
-    padding: 18px var(--gutter) calc(24px + env(safe-area-inset-bottom));
-    animation: up .22s ease both;
-  }
-  .sheet[hidden], .sheet-bg[hidden] { display: none; }
-  .sheet h2 { font: 600 18px var(--serif); margin: 0 0 6px; }
-  .sheet p { font-size: 14.5px; color: var(--ink-soft); margin: 0 0 6px; }
-  .sheet .form { margin: 14px 0 0; max-width: none; }
-  .sheet .close { position: absolute; right: 8px; top: 6px; min-width: 44px; min-height: 44px; font: 20px var(--mono); color: var(--ink-faint); }
-
-  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  @keyframes up { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
-
-  /* ---------- 広い画面 ---------- */
-  @media (min-width: 960px) {
-    :root { --gutter: 48px; }
-    .filters { position: absolute; top: env(safe-area-inset-top); right: 190px; height: var(--bar); align-items: center; padding: 0; z-index: 4; }
-    .filters input { width: 220px; flex: none; font-size: 14px; }
-    .filters select { flex: none; font-size: 14px; }
-    .layout { display: grid; grid-template-columns: 132px minmax(0, 40em); gap: 0 64px; padding: 24px var(--gutter) 0; }
-    .strip { display: none; }
-    .index { display: block !important; position: sticky; top: calc(var(--bar) + 24px); align-self: start; max-height: calc(100vh - 100px); overflow: auto; }
-    .stream { padding: 0 0 120px; }
-    .day-num { font-size: 64px; }
-    .entry h2 { font-size: 21px; }
-    .entry .body p { text-align: justify; }
-    .sheet { left: auto; right: 24px; top: calc(var(--bar) + 8px); bottom: auto; width: 380px; border: 1px solid var(--rule); border-radius: 6px; }
-  }
-  .index { display: none; }
-  .index a { display: flex; justify-content: space-between; font: 12px/2.1 var(--mono); color: var(--ink-faint); text-decoration: none; }
-  .index a:hover { color: var(--shu); }
-  .index .month { font: 600 12px/2.6 var(--mono); color: var(--ink-soft); margin-top: 8px; }
-</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:FILL,wght@0..1,500&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@400;700&display=swap">
+<!-- Sparkle Design のトークンと Tailwind から作った CSS。元は styles/app.css で、bun run build:css で作り直す -->
+<link rel="stylesheet" href="./sparkle.css">
 </head>
-<body>
-<header class="bar">
-  <a class="brand" href="./">agent<b>/</b>diary</a>
-  <div class="counts" id="counts"></div>
-  <a class="acct-btn lang-link" id="langLink" hidden></a>
-  <button class="acct-btn" id="acctBtn" hidden></button>
+<body class="min-h-dvh">
+<header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-divider-low pt-[env(safe-area-inset-top)]">
+  <div class="mx-auto max-w-[1120px] h-14 px-4 lg:px-8 flex items-center gap-3">
+    <a class="flex items-center gap-1.5 shrink-0 text-text-high character-3-bold-pro rounded-minimum outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2" href="./">
+      <span class="icon-6-fill-1 select-none text-primary-500" aria-hidden="true">auto_stories</span>agent-diary
+    </a>
+    <div class="min-w-0 truncate character-1-regular-pro text-text-low" id="counts"></div>
+    <div class="ml-auto flex items-center gap-1 shrink-0">
+      <a id="langLink" hidden></a>
+      <button id="acctBtn" type="button" hidden></button>
+    </div>
+  </div>
 </header>
-<div class="filters" id="tools" hidden>
-  <input id="q" type="search" placeholder="検索" autocomplete="off" enterkeyhint="search">
-  <select id="proj" aria-label="プロジェクト"><option value="">すべて</option></select>
+<div class="mx-auto max-w-[1120px] px-4 lg:px-8" id="tools" hidden>
+  <div class="flex gap-2 pt-4 lg:ml-[248px] lg:max-w-[720px]">
+    <label class="flex-1 min-w-0" id="qWrap">
+      <span class="sr-only">検索</span>
+    </label>
+    <div class="w-[38%] max-w-48 shrink-0" id="projWrap"></div>
+  </div>
 </div>
-<div id="root"><div class="notice"><p>読み込み中</p></div></div>
-<div class="sheet-bg" id="sheetBg" hidden></div>
-<section class="sheet" id="sheet" hidden aria-modal="true" role="dialog"></section>
+<div id="root">
+  <div class="mx-auto max-w-[720px] px-4 pt-8 grid gap-4" aria-label="読み込み中">
+    <div class="animate-pulse rounded-notice bg-skeleton-fill h-10 w-32"></div>
+    <div class="animate-pulse rounded-notice bg-skeleton-fill h-48"></div>
+    <div class="animate-pulse rounded-notice bg-skeleton-fill h-48"></div>
+  </div>
+</div>
+<div id="sheetBg" hidden></div>
+<section id="sheet" hidden aria-modal="true" role="dialog"></section>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/+esm";
 import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
 import { DEMO_ENTRIES, DEMO_ENTRIES_EN } from "./demo.js";
+import * as ui from "./ui.js";
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   // 保存名は改名前のまま。変えると、今ログインしているブラウザが持ち主として読めなくなる
@@ -311,8 +136,15 @@ function authMessage(e) {
   return m;
 }
 
-function notice(big, text, extraHtml = "") {
-  root.innerHTML = `<div class="notice"><div class="big">${esc(big)}</div><p>${esc(text)}</p>${extraHtml}</div>`;
+// 画面いっぱいのお知らせ。icon は Material Symbols の名前、bad なら赤くする
+function notice(big, text, extraHtml = "", { icon = "info", bad = false } = {}) {
+  root.innerHTML = `
+    <div class="mx-auto max-w-md px-4 pt-[12vh] pb-16 text-center">
+      <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full ${bad ? "bg-negative-50 text-negative-500" : "bg-primary-50 text-primary-500"}">${ui.icon(icon, 8)}</div>
+      <h1 class="character-7-bold-pro text-text-high">${esc(big)}</h1>
+      <p class="mt-2 character-3-regular-pro text-text-middle">${esc(text)}</p>
+      ${extraHtml}
+    </div>`;
 }
 
 // ---------- 認証 ----------
@@ -340,25 +172,29 @@ async function recordVisit(view) {
 }
 const visitorsText = (stats) => (stats ? `訪れた人 ${stats.visitors}` : "");
 
+// ラベルつきの入力欄。Sparkle の Input と同じ枠
+const field = (id, labelText, attrs, { size = "md", cls = "" } = {}) => `
+  <label class="${ui.label}" for="${id}">${esc(labelText)}</label>
+  <div class="${ui.input.wrap} ${ui.input[size]}"><input class="${ui.input.field} ${cls}" id="${id}" ${attrs}></div>`;
+
 // メールアドレスにコードを送り、入力されたコードで確認するフォーム。
 // send(email) はコードを送る処理、verify(email, token) は確認する処理
 function codeForm(container, { intro, sendLabel, send, verify, done }) {
   container.innerHTML = `
-    <form class="form" data-step="email">
-      ${intro ? `<p>${esc(intro)}</p>` : ""}
-      <label for="em">メールアドレス</label>
-      <input id="em" type="email" inputmode="email" autocomplete="email" required>
-      <button class="btn" type="submit">${esc(sendLabel)}</button>
-      <div class="msg" aria-live="polite"></div>
+    <form class="grid gap-2 text-left" data-step="email">
+      ${intro ? `<p class="character-2-regular-pro text-text-middle">${esc(intro)}</p>` : ""}
+      ${field("em", "メールアドレス", `type="email" inputmode="email" autocomplete="email" required`)}
+      <button class="${ui.button()} mt-2 w-full" type="submit">${esc(sendLabel)}</button>
+      <div class="${ui.fieldMessage}" data-msg aria-live="polite"></div>
     </form>`;
   const form = container.querySelector("form");
-  const msg = form.querySelector(".msg");
+  const msg = form.querySelector("[data-msg]");
   let email = "";
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const btn = form.querySelector("button");
     btn.disabled = true;
-    msg.className = "msg";
+    msg.className = ui.fieldMessage;
     try {
       if (form.dataset.step === "email") {
         email = form.querySelector("#em").value.trim();
@@ -369,11 +205,10 @@ function codeForm(container, { intro, sendLabel, send, verify, done }) {
         }
         form.dataset.step = "code";
         form.innerHTML = `
-          <p>${esc(email)} にコードを送った。メールに書いてある数字を入れる。</p>
-          <label for="code">コード</label>
-          <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required>
-          <button class="btn" type="submit">確認する</button>
-          <div class="msg" aria-live="polite"></div>`;
+          <p class="character-2-regular-pro text-text-middle">${esc(email)} にコードを送った。メールに書いてある数字を入れる。</p>
+          ${field("code", "コード", `inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required`, { size: "lg", cls: "text-center tracking-[.3em]" })}
+          <button class="${ui.button()} mt-2 w-full" type="submit">確認する</button>
+          <div class="${ui.fieldMessage}" data-msg aria-live="polite"></div>`;
         form.querySelector("#code").focus();
       } else {
         const token = form.querySelector("#code").value.replace(/\s/g, "");
@@ -381,9 +216,9 @@ function codeForm(container, { intro, sendLabel, send, verify, done }) {
         await done();
       }
     } catch (e) {
-      const m = form.querySelector(".msg");
-      m.className = "msg err";
-      m.textContent = authMessage(e);
+      const m = form.querySelector("[data-msg]");
+      m.className = ui.fieldError;
+      m.innerHTML = `${ui.icon("error", 3)}${esc(authMessage(e))}`;
     } finally {
       const b = form.querySelector("button");
       if (b) b.disabled = false;
@@ -393,11 +228,19 @@ function codeForm(container, { intro, sendLabel, send, verify, done }) {
 
 // ---------- アカウントのシート ----------
 
-function openSheet(html, setup) {
-  $("sheet").innerHTML = `<button class="close" aria-label="閉じる">×</button>${html}`;
+$("sheetBg").className = ui.dialog.overlay;
+$("sheet").className = ui.dialog.panel;
+
+function openSheet(title, text, bodyHtml, setup) {
+  $("sheet").setAttribute("aria-label", title);
+  $("sheet").innerHTML = `
+    <button class="${ui.iconButton} absolute right-3 top-3" type="button" data-close aria-label="閉じる">${ui.icon("close", 5)}</button>
+    <h2 class="${ui.dialog.title}">${esc(title)}</h2>
+    <p class="${ui.dialog.text}">${text}</p>
+    <div class="mt-5">${bodyHtml}</div>`;
   $("sheet").hidden = false;
   $("sheetBg").hidden = false;
-  $("sheet").querySelector(".close").onclick = closeSheet;
+  $("sheet").querySelector("[data-close]").onclick = closeSheet;
   setup?.($("sheet"));
 }
 function closeSheet() {
@@ -405,19 +248,24 @@ function closeSheet() {
   $("sheetBg").hidden = true;
 }
 $("sheetBg").onclick = closeSheet;
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape" && !$("sheet").hidden) closeSheet();
+});
 
 function setupAccount(user) {
   const btn = $("acctBtn");
+  btn.className = ui.button({ variant: "ghost", theme: "neutral", size: "sm" });
   btn.hidden = false;
   if (user.is_anonymous) {
-    btn.innerHTML = `<span class="dot"></span>メール未登録`;
+    btn.innerHTML = `<span class="${ui.dot} mr-1.5"></span>メール未登録`;
     btn.onclick = () => openRegister();
   } else {
-    btn.textContent = "アカウント";
+    btn.innerHTML = `${ui.buttonIcon("account_circle", "sm")}アカウント`;
     btn.onclick = () =>
       openSheet(
-        `<h2>アカウント</h2><p>${esc(user.email)} でログインしている。他の端末では、このアドレスに届くコードでログインできる。</p>
-         <div class="form"><button class="btn ghost" id="logout" type="button">この端末からログアウト</button></div>`,
+        "アカウント",
+        `${esc(user.email)} でログインしている。他の端末では、このアドレスに届くコードでログインできる。`,
+        `<button class="${ui.button({ variant: "outline", theme: "neutral" })} w-full" id="logout" type="button">${ui.buttonIcon("logout")}この端末からログアウト</button>`,
         (el) => {
           el.querySelector("#logout").onclick = async () => {
             await sb.auth.signOut();
@@ -430,7 +278,7 @@ function setupAccount(user) {
 
 // 匿名の持ち主にメールアドレスを結び付ける。ユーザー ID は変わらないので、持ち主のまま他の端末からもログインできる
 function openRegister() {
-  openSheet(`<h2>他の端末でも読む</h2><p>今はこの端末のブラウザでだけ読める。メールアドレスを登録すると、スマホや別の PC でもコードでログインできる。</p><div id="regForm"></div>`, (el) => {
+  openSheet("他の端末でも読む", "今はこの端末のブラウザでだけ読める。メールアドレスを登録すると、スマホや別の PC でもコードでログインできる。", `<div id="regForm"></div>`, (el) => {
     codeForm(el.querySelector("#regForm"), {
       sendLabel: "コードを送る",
       send: async (email) => {
@@ -444,10 +292,10 @@ function openRegister() {
         if (error) throw error;
       },
       done: async () => {
-        el.querySelector("#regForm").innerHTML = `<p>登録した。他の端末では、ページの「持ち主ならメールでログイン」から入れる。</p>`;
+        el.querySelector("#regForm").innerHTML = `<p class="character-2-regular-pro text-text-middle">登録した。他の端末では、ページの「持ち主ならメールでログイン」から入れる。</p>`;
         const { data: { user } } = await sb.auth.getUser();
         if (user) setupAccount(user);
-        document.querySelector(".callout")?.remove();
+        document.querySelector("[data-callout]")?.remove();
       },
     });
   });
@@ -456,6 +304,16 @@ function openRegister() {
 // ---------- 日記の表示 ----------
 
 let entries = [];
+
+// 「くわしく」の中の見出しのアイコンと色
+const SECTION = {
+  did: ["check_circle", "text-success-500"],
+  failed: ["error", "text-negative-500"],
+  learned: ["lightbulb", "text-warning-500"],
+  open: ["pending", "text-info-500"],
+  pr: ["merge", "text-primary-500"],
+  files: ["description", "text-neutral-500"],
+};
 
 function render() {
   const q = $("q").value.trim().toLowerCase();
@@ -468,7 +326,7 @@ function render() {
   });
   const stream = $("stream");
   if (shown.length === 0) {
-    stream.innerHTML = `<p class="empty">${entries.length ? L().empty : L().none}</p>`;
+    stream.innerHTML = `<div class="flex flex-col items-center gap-2 py-16 text-center text-text-low">${ui.icon("search_off", 8)}<p class="character-2-regular-pro">${entries.length ? L().empty : L().none}</p></div>`;
     $("strip").innerHTML = "";
     $("index").innerHTML = "";
     return;
@@ -479,45 +337,72 @@ function render() {
     days.get(e.diary_date).push(e);
   }
 
+  const focus = "outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2";
   let strip = "";
   let index = "";
   let lastMonth = "";
   for (const [d, list] of days) {
-    strip += `<a href="#d-${d}"><b>${Number(d.slice(5, 7))}.${d.slice(8)}</b>${wday(d)} ${list.length}</a>`;
+    strip += `<a class="flex-none grid justify-items-center min-w-14 px-2.5 py-1.5 rounded-action border border-divider-middle bg-white shadow-raise transition-colors hover:bg-neutral-50 active:border-primary-400 ${focus}" href="#d-${d}">
+      <span class="character-3-bold-mono text-text-high">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
+      <span class="character-1-regular-pro text-text-low">${wday(d)} · ${list.length}</span></a>`;
     const month = d.slice(0, 7);
     if (month !== lastMonth) {
-      index += `<div class="month">${month.replace("-", ".")}</div>`;
+      index += `<div class="px-2 pt-4 pb-1 character-1-bold-pro text-text-low first:pt-0">${month.replace("-", ".")}</div>`;
       lastMonth = month;
     }
-    index += `<a href="#d-${d}"><span>${L().index(Number(d.slice(8)), wday(d))}</span><span>${list.length}</span></a>`;
+    index += `<a class="flex items-center justify-between h-9 px-2 rounded-notice character-2-regular-pro text-text-middle transition-colors hover:bg-[var(--color-black-alpha-50)] hover:text-text-high ${focus}" href="#d-${d}">
+      <span>${L().index(Number(d.slice(8)), wday(d))}</span><span class="character-1-regular-mono text-text-low">${list.length}</span></a>`;
   }
 
   let html = "";
   let i = 0;
   for (const [d, list] of days) {
     const projects = [...new Set(list.map((e) => e.cc_sessions?.project_name).filter(Boolean))];
-    html += `<section class="day" id="d-${d}" style="animation-delay:${Math.min(i++, 6) * 50}ms">
-      <div class="day-head"><span class="day-num">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
-      <span class="day-meta">${L().dayMeta(d.slice(0, 4), wday(d), list.length)}<br>${esc(projects.join(" / "))}</span></div>`;
+    html += `<section class="day scroll-mt-20 mb-12" id="d-${d}" style="animation-delay:${Math.min(i++, 6) * 50}ms">
+      <div class="flex flex-wrap items-end gap-x-3 gap-y-1 mb-4">
+        <span class="character-10-bold-mono text-text-high tabular-nums">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
+        <span class="pb-1.5 character-2-regular-pro text-text-low">${L().dayMeta(d.slice(0, 4), wday(d), list.length)}${projects.length ? ` · ${esc(projects.join(" / "))}` : ""}</span>
+      </div>
+      <div class="grid gap-4">`;
     for (const e of [...list].reverse()) {
       const startDay = e.span_started_at ? tokyoDay(e.span_started_at) : d;
       const span = e.span_started_at
         ? `${startDay !== d ? `${Number(startDay.slice(5, 7))}/${Number(startDay.slice(8))} ` : ""}${hm(e.span_started_at)}〜${hm(e.ended_at)}`
         : hm(e.ended_at);
-      const sec = (label, xs, bad) => (xs.length ? `<div><h3 class="${bad ? "bad" : ""}">${label}</h3><ul>${xs.map((x) => `<li>${inline(x)}</li>`).join("")}</ul></div>` : "");
+      const sec = (key, label, items) => {
+        const [name, color] = SECTION[key];
+        return `<div><h3 class="flex items-center gap-1.5 character-2-bold-pro text-text-high">${ui.icon(name, 4, { cls: color })}${label}</h3>
+          <ul class="mt-1 pl-6 list-disc marker:text-neutral-300 character-2-regular-pro text-text-middle leading-relaxed">${items}</ul></div>`;
+      };
+      const li = (xs) => xs.map((x) => `<li class="py-0.5">${inline(x)}</li>`).join("");
       const lists =
-        sec(L().did, e.did) + sec(L().failed, e.failed, true) + sec(L().learned, e.learned) + sec(L().open, e.open_threads) +
-        (e.pr_urls.length ? `<div><h3>PR</h3><ul>${e.pr_urls.map((u) => `<li><a href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u.replace("https://github.com/", ""))}</a></li>`).join("")}</ul></div>` : "") +
-        (e.files_touched.length ? `<div><h3>${L().files}</h3><ul>${e.files_touched.map((f) => `<li><code>${esc(f)}</code></li>`).join("")}</ul></div>` : "");
-      html += `<article class="entry">
-        <h2>${esc(e.title)}</h2>
-        <div class="meta">${span} · <span class="proj">${esc(e.cc_sessions?.project_name ?? "")}</span>${e.cc_sessions?.git_branch ? ` (${esc(e.cc_sessions.git_branch)})` : ""} · ${L().meta(e.stats?.user_prompts ?? "?", e.stats?.tool_calls ?? "?")}</div>
-        <div class="body">${e.body.split(/\n{2,}/).map((p) => `<p>${inline(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>
-        ${lists ? `<details><summary>${L().more}</summary><div class="lists">${lists}</div></details>` : ""}
-        ${e.tags.length ? `<div class="tags">${e.tags.map((t) => `<button type="button" data-tag="${esc(t)}">#${esc(t)}</button>`).join("")}</div>` : ""}
+        (e.did.length ? sec("did", L().did, li(e.did)) : "") +
+        (e.failed.length ? sec("failed", L().failed, li(e.failed)) : "") +
+        (e.learned.length ? sec("learned", L().learned, li(e.learned)) : "") +
+        (e.open_threads.length ? sec("open", L().open, li(e.open_threads)) : "") +
+        (e.pr_urls.length ? sec("pr", "PR", e.pr_urls.map((u) => `<li class="py-0.5 break-all">${ui.externalLink(esc(u), esc(u.replace("https://github.com/", "")), 2)}</li>`).join("")) : "") +
+        (e.files_touched.length ? sec("files", L().files, e.files_touched.map((f) => `<li class="py-0.5"><code>${esc(f)}</code></li>`).join("")) : "");
+      html += `<article class="${ui.card.base} overflow-hidden">
+        <header class="${ui.card.header}">
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-1 character-1-regular-pro text-text-low">
+            <span class="character-1-bold-mono text-text-middle">${span}</span>
+            ${e.cc_sessions?.project_name ? `<span class="${ui.tag.base} ${ui.tag.primary}">${esc(e.cc_sessions.project_name)}</span>` : ""}
+            ${e.cc_sessions?.git_branch ? `<span class="inline-flex items-center gap-0.5 character-1-regular-mono">${ui.icon("call_split", 2)}${esc(e.cc_sessions.git_branch)}</span>` : ""}
+          </div>
+          <h2 class="${ui.card.title} mt-1">${esc(e.title)}</h2>
+        </header>
+        <div class="${ui.card.content} diary-body">${e.body.split(/\n{2,}/).map((p) => `<p>${inline(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>
+        <div class="flex flex-wrap items-center gap-1.5 px-6 pt-1 pb-4">
+          ${e.tags.map((t) => `<button class="${ui.tagButton}" type="button" data-tag="${esc(t)}">#${esc(t)}</button>`).join("")}
+          <span class="ml-auto character-1-regular-pro text-text-low">${L().meta(e.stats?.user_prompts ?? "?", e.stats?.tool_calls ?? "?")}</span>
+        </div>
+        ${lists ? `<details class="group border-t border-divider-low">
+          <summary class="flex items-center gap-1 h-11 px-6 cursor-pointer character-2-bold-pro text-primary-500 transition-colors hover:bg-primary-50 ${focus} focus-visible:ring-inset focus-visible:ring-offset-0">${L().more}${ui.icon("expand_more", 5, { cls: "transition-transform group-open:rotate-180" })}</summary>
+          <div class="diary-lists grid gap-4 px-6 pt-2 pb-5 bg-neutral-50 border-t border-divider-low">${lists}</div>
+        </details>` : ""}
       </article>`;
     }
-    html += `</section>`;
+    html += `</div></section>`;
   }
   stream.innerHTML = html;
   $("strip").innerHTML = strip;
@@ -527,13 +412,22 @@ function render() {
 function start(list, countsHtml, calloutHtml = "") {
   entries = list;
   $("counts").innerHTML = countsHtml;
-  root.innerHTML = `<nav class="strip" id="strip"></nav><div class="layout"><nav class="index" id="index"></nav><main class="stream">${calloutHtml}<div id="stream"></div></main></div>`;
+  root.innerHTML = `
+    <nav class="strip flex gap-2 overflow-x-auto px-4 pt-3 pb-2 lg:hidden" id="strip" aria-label="日付"></nav>
+    <div class="mx-auto max-w-[1120px] px-4 lg:px-8 pt-4 pb-24 lg:grid lg:grid-cols-[200px_minmax(0,720px)] lg:gap-12">
+      <nav class="hidden lg:block sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-auto" id="index" aria-label="日付"></nav>
+      <main>${calloutHtml}<div id="stream"></div></main>
+    </div>`;
   const projects = [...new Set(entries.map((e) => e.cc_sessions?.project_name).filter(Boolean))].sort();
   $("proj").innerHTML = `<option value="">${L().all}</option>` + projects.map((p) => `<option>${esc(p)}</option>`).join("");
   $("q").placeholder = L().search;
   $("tools").hidden = false;
   render();
 }
+
+// 検索欄と絞り込み。Sparkle の Input と Select の見た目
+$("qWrap").insertAdjacentHTML("beforeend", `<div class="${ui.input.wrap} ${ui.input.md}">${ui.icon("search", 5, { cls: "pl-1.5 text-neutral-500" })}<input class="${ui.input.field}" id="q" type="search" placeholder="検索" autocomplete="off" enterkeyhint="search"></div>`);
+$("projWrap").innerHTML = `<div class="${ui.select.wrap}"><select class="${ui.select.field}" id="proj" aria-label="プロジェクト"><option value="">すべて</option></select>${ui.icon("expand_more", 5, { cls: ui.select.icon })}</div>`;
 
 root.addEventListener("click", (ev) => {
   const t = ev.target.closest("[data-tag]");
@@ -551,47 +445,61 @@ $("proj").addEventListener("change", () => render());
 // ---------- デモの説明 ----------
 
 const REPO_URL = "https://github.com/konaito/agent-diary";
+const step = (n, text) => `<li class="flex gap-3"><span class="inline-flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-primary-500 text-white character-1-bold-mono">${n}</span><span class="pt-px">${text}</span></li>`;
+const about = (t) => `
+  <section class="${ui.card.base} mb-10" aria-labelledby="about-title">
+    <div class="${ui.card.header}">
+      <span class="${ui.tag.base} ${ui.tag.primary} self-start">${t.kicker}</span>
+      <h2 class="character-6-bold-pro text-text-high mt-2" id="about-title">${t.title}</h2>
+    </div>
+    <div class="${ui.card.content} grid gap-3 character-3-regular-pro text-text-middle [&_strong]:text-text-high">
+      <p>${t.intro}</p>
+      <p>${t.fiction}</p>
+      <ol class="grid gap-3 my-2 character-2-regular-pro">${t.steps.map((s, i) => step(i + 1, s)).join("")}</ol>
+      <p>${t.details}</p>
+      <p>${t.owner}</p>
+    </div>
+    <div class="flex flex-wrap gap-x-5 gap-y-2 px-6 pt-3 pb-4 mt-2 border-t border-divider-low character-2-regular-pro">
+      ${ui.externalLink(REPO_URL, t.repo)}
+      ${ui.externalLink(`${REPO_URL}#otpを選んだ理由`, t.otp)}
+      <a class="${ui.link}" href="./">${t.back}</a>
+    </div>
+  </section>`;
 const ABOUT = {
-  ja: `
-  <section class="about" aria-labelledby="about-title">
-    <div class="kicker">このページについて</div>
-    <h2 id="about-title">エージェントが書く作業日記</h2>
-    <p>agent-diaryは、AIエージェントが自分の作業の日記を書く仕組みだ。今はClaude Codeに対応していて、セッションを閉じるたびに、そのセッションでやったことをClaude Code自身が日記にする。</p>
-    <p><strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物だが、書き方と細かさは、実際に生成された日記に合わせてある。</p>
-    <ol>
-      <li>Claude Codeのセッションが終わると、SessionEndフックがその会話の記録を受け取る。ターミナルのウィンドウを閉じたときも動く。</li>
-      <li>依頼、返答、ツールの操作を時刻つきの経過記録に縮める。書き込んだファイルやPRは記録から機械的に拾う。</li>
-      <li>経過記録をClaude Codeに渡して、日記を書かせる。経過にないことは書かない決まりにしてある。</li>
-      <li>日記はSupabaseに入り、このページで日付ごとに読める。</li>
-    </ol>
-    <p>各日記の「くわしく」を開くと、やったこと、うまくいかなかったこと、分かったこと、残っていることが分かれて並ぶ。タグを押すと同じタグの日記に絞れる。</p>
-    <p>本物の日記は持ち主だけが読める。持ち主は、メールに届く数字のコードで、どの端末からでもログインする。</p>
-    <div class="links">
-      <a href="${REPO_URL}" target="_blank" rel="noreferrer">GitHubで仕組みを見る</a>
-      <a href="${REPO_URL}#otpを選んだ理由" target="_blank" rel="noreferrer">OTPを選んだ理由</a>
-      <a href="./">日記のページへ戻る</a>
-    </div>
-  </section>`,
-  en: `
-  <section class="about" aria-labelledby="about-title">
-    <div class="kicker">About this page</div>
-    <h2 id="about-title">A work diary written by agents</h2>
-    <p>agent-diary lets an AI agent keep a diary of its own work. It currently supports Claude Code: each time a session ends, Claude Code writes an entry about what it did in that session.</p>
-    <p><strong>The entries below are fictional.</strong> The projects and events are made up, but the style and level of detail match entries that agent-diary actually generated.</p>
-    <ol>
-      <li>When a Claude Code session ends, a SessionEnd hook receives the conversation transcript. It also runs when the terminal window is closed.</li>
-      <li>Requests, replies and tool calls are condensed into a timestamped log. Files written and pull requests are picked up from the transcript mechanically.</li>
-      <li>Claude Code is given the log and writes the entry. It is told not to write anything that is not in the log.</li>
-      <li>The entry is stored in Supabase and shown on this page by date.</li>
-    </ol>
-    <p>Open “Details” on an entry to see what was done, what didn't work, what was learned and what is still open. Tap a tag to filter by it.</p>
-    <p>Real entries are visible only to the owner, who signs in on any device with a numeric code sent by email.</p>
-    <div class="links">
-      <a href="${REPO_URL}" target="_blank" rel="noreferrer">How it works on GitHub</a>
-      <a href="${REPO_URL}#otpを選んだ理由" target="_blank" rel="noreferrer">Why a one-time code</a>
-      <a href="./">Back to the diary</a>
-    </div>
-  </section>`,
+  ja: about({
+    kicker: "このページについて",
+    title: "エージェントが書く作業日記",
+    intro: "agent-diaryは、AIエージェントが自分の作業の日記を書く仕組みだ。今はClaude Codeに対応していて、セッションを閉じるたびに、そのセッションでやったことをClaude Code自身が日記にする。",
+    fiction: "<strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物だが、書き方と細かさは、実際に生成された日記に合わせてある。",
+    steps: [
+      "Claude Codeのセッションが終わると、SessionEndフックがその会話の記録を受け取る。ターミナルのウィンドウを閉じたときも動く。",
+      "依頼、返答、ツールの操作を時刻つきの経過記録に縮める。書き込んだファイルやPRは記録から機械的に拾う。",
+      "経過記録をClaude Codeに渡して、日記を書かせる。経過にないことは書かない決まりにしてある。",
+      "日記はSupabaseに入り、このページで日付ごとに読める。",
+    ],
+    details: "各日記の「くわしく」を開くと、やったこと、うまくいかなかったこと、分かったこと、残っていることが分かれて並ぶ。タグを押すと同じタグの日記に絞れる。",
+    owner: "本物の日記は持ち主だけが読める。持ち主は、メールに届く数字のコードで、どの端末からでもログインする。",
+    repo: "GitHubで仕組みを見る",
+    otp: "OTPを選んだ理由",
+    back: "日記のページへ戻る",
+  }),
+  en: about({
+    kicker: "About this page",
+    title: "A work diary written by agents",
+    intro: "agent-diary lets an AI agent keep a diary of its own work. It currently supports Claude Code: each time a session ends, Claude Code writes an entry about what it did in that session.",
+    fiction: "<strong>The entries below are fictional.</strong> The projects and events are made up, but the style and level of detail match entries that agent-diary actually generated.",
+    steps: [
+      "When a Claude Code session ends, a SessionEnd hook receives the conversation transcript. It also runs when the terminal window is closed.",
+      "Requests, replies and tool calls are condensed into a timestamped log. Files written and pull requests are picked up from the transcript mechanically.",
+      "Claude Code is given the log and writes the entry. It is told not to write anything that is not in the log.",
+      "The entry is stored in Supabase and shown on this page by date.",
+    ],
+    details: "Open “Details” on an entry to see what was done, what didn't work, what was learned and what is still open. Tap a tag to filter by it.",
+    owner: "Real entries are visible only to the owner, who signs in on any device with a numeric code sent by email.",
+    repo: "How it works on GitHub",
+    otp: "Why a one-time code",
+    back: "Back to the diary",
+  }),
 };
 
 // ---------- 画面の切り替え ----------
@@ -599,8 +507,14 @@ const ABOUT = {
 function showLocked(stats) {
   $("counts").textContent = visitorsText(stats);
   notice("閉じています", "この日記は、持ち主だけが読める。", `
-    <p><a class="demo-link" href="?demo&lang=ja">デモを見る</a> · <a class="demo-link" href="?demo&lang=en" lang="en">See the demo in English</a></p>
-    <details class="fold"><summary>持ち主ならメールでログイン</summary><div id="loginForm"></div></details>`);
+    <div class="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+      <a class="${ui.button()}" href="?demo&lang=ja">${ui.buttonIcon("visibility")}デモを見る</a>
+      <a class="${ui.button({ variant: "outline", theme: "neutral" })}" href="?demo&lang=en" lang="en">See the demo in English</a>
+    </div>
+    <details class="group mt-10 border-t border-divider-middle pt-4">
+      <summary class="${ui.button({ variant: "ghost", theme: "neutral", size: "sm" })} mx-auto w-fit">${ui.buttonIcon("key", "sm")}持ち主ならメールでログイン${ui.icon("expand_more", 3, { cls: "ml-1 transition-transform group-open:rotate-180" })}</summary>
+      <div class="${ui.card.base} mt-4 p-6" id="loginForm"></div>
+    </details>`, { icon: "lock" });
   codeForm($("loginForm"), {
     sendLabel: "コードを送る",
     // 登録済みのアドレスにだけ送る。知らないアドレスでユーザーを作らない
@@ -623,7 +537,7 @@ async function main() {
     user = await currentUser();
   } catch (e) {
     if (!demo) {
-      notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`);
+      notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`, "", { icon: "cloud_off", bad: true });
       return;
     }
   }
@@ -633,13 +547,14 @@ async function main() {
     const stats = user ? await recordVisit("demo") : null;
     const sw = L().switchTo;
     const link = $("langLink");
+    link.className = ui.button({ variant: "ghost", theme: "neutral", size: "sm" });
     link.href = `?demo&lang=${sw.lang}`;
     link.lang = sw.lang;
-    link.textContent = sw.label;
+    link.innerHTML = `${ui.buttonIcon("translate", "sm")}${sw.label}`;
     link.hidden = false;
     start(
       LANG === "en" ? DEMO_ENTRIES_EN : DEMO_ENTRIES,
-      `<span class="warn">${L().demo}</span> · ${L().basis}${stats ? ` · ${L().visitors(stats.visitors)}` : ""}`,
+      `<span class="${ui.tag.base} ${ui.tag.warning} mr-1">${L().demo}</span>${L().basis}${stats ? ` · ${L().visitors(stats.visitors)}` : ""}`,
       ABOUT[LANG],
     );
     return;
@@ -648,7 +563,7 @@ async function main() {
   try {
     owner = await claimOwner();
   } catch (e) {
-    notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`);
+    notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`, "", { icon: "cloud_off", bad: true });
     return;
   }
   if (!owner) {
@@ -666,14 +581,17 @@ async function main() {
     sb.from("diary_entries").select("status").neq("status", "written"),
   ]);
   if (error) {
-    notice("読めなかった", error.message);
+    notice("読めなかった", error.message, "", { icon: "error", bad: true });
     return;
   }
   const pending = (queue ?? []).filter((r) => r.status === "pending" || r.status === "generating").length;
   const failed = (queue ?? []).filter((r) => r.status === "failed").length;
-  const counts = [`${data.length}件`, pending ? `生成待ち ${pending}` : "", failed ? `<span class="warn">失敗 ${failed}</span>` : "", visitorsText(visitStats)].filter(Boolean).join(" · ");
+  const counts = [`${data.length}件`, pending ? `生成待ち ${pending}` : "", failed ? `<span class="text-negative-500">失敗 ${failed}</span>` : "", visitorsText(visitStats)].filter(Boolean).join(" · ");
   const callout = user.is_anonymous
-    ? `<div class="callout">今はこの端末でだけ読める。<button type="button" data-register>メールを登録</button>すると、他の端末でも読める。</div>`
+    ? `<div class="${ui.inlineMessage.info} mb-6" data-callout role="status">
+        <span class="${ui.inlineMessage.icon}">${ui.icon("info", 6)}</span>
+        <p class="${ui.inlineMessage.body}">今はこの端末でだけ読める。<button class="${ui.link} cursor-pointer" type="button" data-register>メールを登録</button>すると、他の端末でも読める。</p>
+      </div>`
     : "";
   start(data, counts, callout);
 }

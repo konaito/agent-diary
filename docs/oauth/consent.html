@@ -3,56 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#fdfcf8">
+<meta name="theme-color" content="#ffffff">
 <meta name="robots" content="noindex">
 <title>agent-diary へのアクセスの許可</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --paper: #fdfcf8; --paper-2: #f4f0e6; --ink: #1d1b18; --ink-soft: #5d5850; --ink-faint: #9a948a;
-    --rule: #e6e1d6; --shu: #c23b22;
-    --mono: "IBM Plex Mono", ui-monospace, monospace;
-    --serif: "Shippori Mincho", "Hiragino Mincho ProN", serif;
-  }
-  * { box-sizing: border-box; }
-  html { background: var(--paper); -webkit-text-size-adjust: 100%; }
-  body { margin: 0; color: var(--ink); background: var(--paper); font: 16px/1.9 var(--serif); -webkit-font-smoothing: antialiased; }
-  .bar { display: flex; align-items: center; min-height: 52px; padding: env(safe-area-inset-top) 16px 0; border-bottom: 1px solid var(--rule); }
-  .brand { font: 14px var(--mono); letter-spacing: .08em; text-decoration: none; color: inherit; }
-  .brand b { color: var(--shu); font-weight: 500; }
-  main { max-width: 440px; margin: 0 auto; padding: 32px 16px calc(48px + env(safe-area-inset-bottom)); }
-  .kicker { font: 11px var(--mono); letter-spacing: .12em; color: var(--shu); }
-  h1 { font: 800 26px/1.45 var(--serif); margin: 4px 0 12px; }
-  p { color: var(--ink-soft); margin: 0 0 12px; }
-  .client { background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 14px 16px; margin: 16px 0; }
-  .client .name { font: 600 19px/1.5 var(--serif); color: var(--ink); }
-  .client dl { margin: 8px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font: 12px/1.8 var(--mono); }
-  .client dt { color: var(--ink-faint); }
-  .client dd { margin: 0; color: var(--ink-soft); word-break: break-all; }
-  .grants { margin: 0 0 18px; padding-left: 1.1em; font-size: 15px; color: var(--ink-soft); }
-  .form { display: grid; gap: 10px; margin-top: 16px; }
-  .form label { font: 12px var(--mono); color: var(--ink-soft); }
-  .form input { font: 16px var(--mono); padding: 12px; border: 1px solid var(--rule); border-radius: 3px; background: #fff; outline: none; width: 100%; color: var(--ink); }
-  .form input:focus { border-color: var(--shu); }
-  .form input.code { letter-spacing: .3em; text-align: center; font-size: 20px; }
-  .btn { min-height: 48px; border-radius: 3px; border: 0; background: var(--ink); color: var(--paper); font: 14px var(--mono); letter-spacing: .04em; cursor: pointer; width: 100%; }
-  .btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--rule); }
-  .btn:disabled { opacity: .5; }
-  .row { display: grid; gap: 10px; }
-  .msg { font: 12.5px/1.7 var(--mono); color: var(--ink-soft); min-height: 1.7em; }
-  .msg.err { color: var(--shu); }
-  .who { font: 12px var(--mono); color: var(--ink-faint); margin-top: 18px; }
-</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:FILL,wght@0..1,500&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@400;700&display=swap">
+<link rel="stylesheet" href="../sparkle.css">
 </head>
-<body>
-<header class="bar"><a class="brand" href="../">agent<b>/</b>diary</a></header>
-<main id="root"><p>読み込み中</p></main>
+<body class="min-h-dvh">
+<header class="bg-white border-b border-divider-low pt-[env(safe-area-inset-top)]">
+  <div class="mx-auto max-w-[1120px] h-14 px-4 lg:px-8 flex items-center">
+    <a class="flex items-center gap-1.5 text-text-high character-3-bold-pro rounded-minimum outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2" href="../">
+      <span class="icon-6-fill-1 select-none text-primary-500" aria-hidden="true">auto_stories</span>agent-diary
+    </a>
+  </div>
+</header>
+<main class="mx-auto max-w-[480px] px-4 pt-8 pb-[calc(48px+env(safe-area-inset-bottom))]">
+  <div class="rounded-minimum border border-divider-middle bg-white shadow-raise px-6 py-6" id="root">
+    <div class="grid gap-3" aria-label="読み込み中">
+      <div class="animate-pulse rounded-notice bg-skeleton-fill h-5 w-24"></div>
+      <div class="animate-pulse rounded-notice bg-skeleton-fill h-8"></div>
+      <div class="animate-pulse rounded-notice bg-skeleton-fill h-24"></div>
+    </div>
+  </div>
+</main>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm";
 import { SUPABASE_KEY, SUPABASE_URL } from "../config.js";
+import * as ui from "../ui.js";
 
 // 日記のページと同じ保存名にして、日記のページでログインしていればそのまま許可できるようにする
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -76,17 +57,27 @@ function show(html) {
   root.innerHTML = html;
 }
 
+const kicker = `<span class="${ui.tag.base} ${ui.tag.primary}">アクセスの許可</span>`;
+const h1 = (text) => `<h1 class="character-6-bold-pro text-text-high mt-2">${text}</h1>`;
+const p = (text) => `<p class="character-3-regular-pro text-text-middle mt-3">${text}</p>`;
+const field = (id, labelText, attrs, { size = "md", cls = "" } = {}) => `
+  <label class="${ui.label}" for="${id}">${labelText}</label>
+  <div class="${ui.input.wrap} ${ui.input[size]}"><input class="${ui.input.field} ${cls}" id="${id}" ${attrs}></div>`;
+const showError = (el, e) => {
+  el.className = ui.fieldError;
+  el.innerHTML = `${ui.icon("error", 3)}${esc(errorText(e))}`;
+};
+
 // 持ち主としてログインしていなければ、メールのコードでログインしてもらう
 function showLogin(note) {
   show(`
-    <div class="kicker">アクセスの許可</div>
-    <h1>持ち主としてログイン</h1>
-    <p>${esc(note)}</p>
-    <form class="form" id="f">
-      <label for="em">メールアドレス</label>
-      <input id="em" type="email" inputmode="email" autocomplete="email" required>
-      <button class="btn" type="submit">コードを送る</button>
-      <div class="msg" aria-live="polite"></div>
+    ${kicker}
+    ${h1("持ち主としてログイン")}
+    ${p(esc(note))}
+    <form class="grid gap-2 mt-5" id="f">
+      ${field("em", "メールアドレス", `type="email" inputmode="email" autocomplete="email" required`)}
+      <button class="${ui.button()} mt-2 w-full" type="submit">コードを送る</button>
+      <div class="${ui.fieldMessage}" data-msg aria-live="polite"></div>
     </form>`);
   const f = document.getElementById("f");
   let email = "";
@@ -102,11 +93,10 @@ function showLogin(note) {
         if (error) throw error;
         step = "code";
         f.innerHTML = `
-          <p>${esc(email)} にコードを送った。メールに書いてある数字を入れる。</p>
-          <label for="code">コード</label>
-          <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required>
-          <button class="btn" type="submit">確認する</button>
-          <div class="msg" aria-live="polite"></div>`;
+          <p class="character-2-regular-pro text-text-middle">${esc(email)} にコードを送った。メールに書いてある数字を入れる。</p>
+          ${field("code", "コード", `inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required`, { size: "lg", cls: "text-center tracking-[.3em]" })}
+          <button class="${ui.button()} mt-2 w-full" type="submit">確認する</button>
+          <div class="${ui.fieldMessage}" data-msg aria-live="polite"></div>`;
         f.querySelector("#code").focus();
       } else {
         const token = f.querySelector("#code").value.replace(/\s/g, "");
@@ -116,9 +106,7 @@ function showLogin(note) {
         return;
       }
     } catch (e) {
-      const m = f.querySelector(".msg");
-      m.className = "msg err";
-      m.textContent = errorText(e);
+      showError(f.querySelector("[data-msg]"), e);
     }
     const b = f.querySelector("button");
     if (b) b.disabled = false;
@@ -130,18 +118,17 @@ async function decide(approve) {
   const fn = approve ? sb.auth.oauth.approveAuthorization : sb.auth.oauth.denyAuthorization;
   const { data, error } = await fn.call(sb.auth.oauth, authorizationId, { skipBrowserRedirect: true });
   if (error) {
-    root.querySelector(".msg").className = "msg err";
-    root.querySelector(".msg").textContent = errorText(error);
+    showError(root.querySelector("[data-msg]"), error);
     for (const b of root.querySelectorAll("button")) b.disabled = false;
     return;
   }
-  show(`<div class="kicker">アクセスの許可</div><h1>${approve ? "許可した" : "拒否した"}</h1><p>エージェントの画面に戻る。</p>`);
+  show(`${kicker}${h1(approve ? "許可した" : "拒否した")}${p("エージェントの画面に戻る。")}`);
   location.assign(data.redirect_url);
 }
 
 async function main() {
   if (!authorizationId) {
-    show(`<h1>このページは直接開かない</h1><p>エージェントが agent-diary につなぐときに、Supabase から案内されるページだ。</p>`);
+    show(`${h1("このページは直接開かない")}${p("エージェントが agent-diary につなぐときに、Supabase から案内されるページだ。")}`);
     return;
   }
   const { data: { session } } = await sb.auth.getSession();
@@ -156,7 +143,7 @@ async function main() {
   }
   const { data, error } = await sb.auth.oauth.getAuthorizationDetails(authorizationId);
   if (error) {
-    show(`<h1>許可の手続きを読めなかった</h1><p>${esc(errorText(error))}</p><p>期限（10分）が切れた可能性がある。エージェント側でつなぎ直す。</p>`);
+    show(`${h1("許可の手続きを読めなかった")}${p(esc(errorText(error)))}${p("期限（10分）が切れた可能性がある。エージェント側でつなぎ直す。")}`);
     return;
   }
   // 以前に許可済みなら、確認なしでエージェントに戻す
@@ -166,28 +153,28 @@ async function main() {
   }
   const user = session.user;
   show(`
-    <div class="kicker">アクセスの許可</div>
-    <h1>エージェントに日記を任せる</h1>
-    <div class="client">
-      <div class="name">${esc(data.client?.name || "名前のないクライアント")}</div>
-      <dl>
-        <dt>戻り先</dt><dd>${esc(data.redirect_uri)}</dd>
-        ${data.client?.uri ? `<dt>サイト</dt><dd>${esc(data.client.uri)}</dd>` : ""}
-        <dt>範囲</dt><dd>${esc(data.scope || "なし")}</dd>
+    ${kicker}
+    ${h1("エージェントに日記を任せる")}
+    <div class="mt-4 rounded-action border border-divider-middle bg-neutral-50 px-4 py-3">
+      <div class="flex items-center gap-2 character-4-bold-pro text-text-high">${ui.icon("smart_toy", 6, { cls: "text-primary-500" })}${esc(data.client?.name || "名前のないクライアント")}</div>
+      <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 character-1-regular-pro">
+        <dt class="text-text-low">戻り先</dt><dd class="text-text-middle break-all font-[family-name:var(--font-family-mono)]">${esc(data.redirect_uri)}</dd>
+        ${data.client?.uri ? `<dt class="text-text-low">サイト</dt><dd class="text-text-middle break-all font-[family-name:var(--font-family-mono)]">${esc(data.client.uri)}</dd>` : ""}
+        <dt class="text-text-low">範囲</dt><dd class="text-text-middle break-all font-[family-name:var(--font-family-mono)]">${esc(data.scope || "なし")}</dd>
       </dl>
     </div>
-    <p>許可すると、このエージェントは持ち主として次のことができる。</p>
-    <ul class="grants">
-      <li>日記を書く</li>
-      <li>これまでの日記を読み、探す</li>
+    ${p("許可すると、このエージェントは持ち主として次のことができる。")}
+    <ul class="mt-2 grid gap-1.5 character-3-regular-pro text-text-high">
+      <li class="flex items-center gap-2">${ui.icon("edit_note", 5, { cls: "text-primary-500" })}日記を書く</li>
+      <li class="flex items-center gap-2">${ui.icon("manage_search", 5, { cls: "text-primary-500" })}これまでの日記を読み、探す</li>
     </ul>
-    <p>心当たりのないクライアントなら拒否する。</p>
-    <div class="row">
-      <button class="btn" id="ok" type="button">許可する</button>
-      <button class="btn ghost" id="ng" type="button">拒否する</button>
+    ${p("心当たりのないクライアントなら拒否する。")}
+    <div class="mt-6 grid gap-2">
+      <button class="${ui.button()} w-full" id="ok" type="button">許可する</button>
+      <button class="${ui.button({ variant: "outline", theme: "neutral" })} w-full" id="ng" type="button">拒否する</button>
     </div>
-    <div class="msg" aria-live="polite"></div>
-    <div class="who">${esc(user.email || "メール未登録の持ち主")} としてログイン中</div>`);
+    <div class="${ui.fieldMessage} mt-2" data-msg aria-live="polite"></div>
+    <div class="mt-4 pt-4 border-t border-divider-low flex items-center gap-1.5 character-1-regular-pro text-text-low">${ui.icon("account_circle", 3)}${esc(user.email || "メール未登録の持ち主")} としてログイン中</div>`);
   document.getElementById("ok").onclick = () => decide(true);
   document.getElementById("ng").onclick = () => decide(false);
 }

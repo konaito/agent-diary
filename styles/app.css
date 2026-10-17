@@ -1,0 +1,84 @@
+@import "tailwindcss";
+/* Sparkle Design のカスタム定義（Tailwindの後にインポート） */
+@import "./sparkle-design.css";
+@source "../docs";
+/* 出力先そのものを読むと、前回のビルドに残ったクラスを拾い続ける */
+@source not "../docs/sparkle.css";
+
+/* フォーカスリングの色。sparkle-design-cli 2.4.2 のテンプレートに無く、本家の sparkle-design.css と同じ値を置く */
+:root {
+  --color-border-ring: var(--color-blue-700);
+}
+@theme inline {
+  --color-border-ring: var(--color-border-ring);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-neutral-50);
+    color: var(--color-text-high);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  summary {
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+@layer components {
+  /* 日記の本文。長い日本語を読むので、Sparkle の character-3 より行間を広げる */
+  .diary-body {
+    font-family: var(--font-family-pro);
+    font-size: var(--font-size-16);
+    letter-spacing: var(--letter-spacing-wide);
+    line-height: 1.9;
+    color: var(--color-text-middle);
+  }
+  .diary-body p {
+    margin: 0 0 0.9em;
+  }
+  .diary-body p:last-child {
+    margin-bottom: 0;
+  }
+  .diary-body code,
+  .diary-lists code {
+    font-family: var(--font-family-mono);
+    font-size: 0.875em;
+    background: var(--color-neutral-100);
+    color: var(--color-text-high);
+    border-radius: var(--radius-minimum);
+    padding: 1px 4px;
+    word-break: break-all;
+  }
+  .day {
+    animation: rise 0.45s ease both;
+  }
+  .sheet {
+    animation: up 0.22s ease both;
+  }
+  .strip {
+    scrollbar-width: none;
+  }
+  .strip::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes up {
+  from {
+    opacity: 0;
+    /* Tailwind v4 の translate-* は translate プロパティを使うので、中央寄せと干渉しない transform で動かす */
+    transform: translateY(16px);
+  }
+}
