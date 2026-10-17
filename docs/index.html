@@ -125,6 +125,17 @@
     font-size: 14.5px; line-height: 1.8;
   }
   .callout button { color: var(--shu); text-decoration: underline; font-family: var(--mono); font-size: 13px; }
+  /* ---------- デモの説明 ---------- */
+  .about { margin: 12px 0 44px; padding: 20px 18px 8px; background: #fff; border: 1px solid var(--rule); border-radius: 4px; }
+  .about .kicker { font: 11px var(--mono); letter-spacing: .12em; color: var(--shu); }
+  .about h2 { font: 800 24px/1.45 var(--serif); margin: 4px 0 10px; }
+  .about p { font-size: 15.5px; line-height: 1.9; margin: 0 0 .9em; color: var(--ink-soft); }
+  .about p strong { color: var(--ink); font-weight: 600; }
+  .about ol { list-style: none; counter-reset: step; margin: 6px 0 16px; padding: 0; display: grid; gap: 10px; }
+  .about li { counter-increment: step; display: grid; grid-template-columns: 28px 1fr; gap: 0 8px; font-size: 14.5px; line-height: 1.75; }
+  .about li::before { content: counter(step, decimal-leading-zero); font: 500 12px/2 var(--mono); color: var(--shu); }
+  .about .links { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 10px 0 12px; border-top: 1px dashed var(--rule); }
+  .about .links a { font: 13px var(--mono); color: var(--shu); min-height: 36px; display: inline-flex; align-items: center; }
   .notice { padding: 14vh var(--gutter) 40px; text-align: center; }
   .notice .big { font: 800 40px/1.3 var(--serif); color: var(--shu); }
   .notice p { color: var(--ink-soft); margin: 10px 0; }
@@ -475,6 +486,30 @@ root.addEventListener("click", (ev) => {
 $("q").addEventListener("input", () => render());
 $("proj").addEventListener("change", () => render());
 
+// ---------- デモの説明 ----------
+
+const REPO_URL = "https://github.com/konaito/agent-diary";
+const ABOUT_HTML = `
+  <section class="about" aria-labelledby="about-title">
+    <div class="kicker">このページについて</div>
+    <h2 id="about-title">エージェントが書く作業日記</h2>
+    <p>agent-diaryは、AIエージェントが自分の作業の日記を書く仕組みだ。今はClaude Codeに対応していて、セッションを閉じるたびに、そのセッションでやったことをClaude Code自身が日記にする。</p>
+    <p><strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物で、本物の日記と同じ形にしてある。</p>
+    <ol>
+      <li>Claude Codeのセッションが終わると、SessionEndフックがその会話の記録を受け取る。ターミナルのウィンドウを閉じたときも動く。</li>
+      <li>依頼、返答、ツールの操作を時刻つきの経過記録に縮める。書き込んだファイルやPRは記録から機械的に拾う。</li>
+      <li>経過記録をClaude Codeに渡して、日記を書かせる。経過にないことは書かない決まりにしてある。</li>
+      <li>日記はSupabaseに入り、このページで日付ごとに読める。</li>
+    </ol>
+    <p>各日記の「くわしく」を開くと、やったこと、うまくいかなかったこと、分かったこと、残っていることが分かれて並ぶ。タグを押すと同じタグの日記に絞れる。</p>
+    <p>本物の日記は持ち主だけが読める。持ち主は、メールに届く数字のコードで、どの端末からでもログインする。</p>
+    <div class="links">
+      <a href="${REPO_URL}" target="_blank" rel="noreferrer">GitHubで仕組みを見る</a>
+      <a href="${REPO_URL}#otpを選んだ理由" target="_blank" rel="noreferrer">OTPを選んだ理由</a>
+      <a href="./">日記のページへ戻る</a>
+    </div>
+  </section>`;
+
 // ---------- 画面の切り替え ----------
 
 function showLocked(stats) {
@@ -510,7 +545,7 @@ async function main() {
   }
   if (demo) {
     const stats = user ? await recordVisit("demo") : null;
-    start(DEMO_ENTRIES, `<span class="warn">デモ</span> · 架空の日記${stats ? ` · ${visitorsText(stats)}` : ""}`);
+    start(DEMO_ENTRIES, `<span class="warn">デモ</span> · 架空の日記${stats ? ` · ${visitorsText(stats)}` : ""}`, ABOUT_HTML);
     return;
   }
   let owner;
