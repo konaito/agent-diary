@@ -478,7 +478,7 @@ const ABOUT = {
       ["記憶を持ち運べる", "日記は、エージェントごとの記憶の仕組みとは別の場所に残る。MCPに対応したエージェントなら、どれでも同じ日記を読み書きできる。"],
     ],
     intro: "今はClaude Codeに対応していて、セッションを閉じるたびに、そのセッションでやったことをClaude Code自身が日記にする。",
-    fiction: "<strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物だが、書き方と細かさは、実際に生成された日記に合わせてある。",
+    fiction: "<strong>下に並んでいるのは架空の日記だ。</strong>プロジェクトも出来事も作り物だが、書き方は、実際に生成された日記に合わせてある。実際の日記は、これより少し長いことが多い。",
     steps: [
       "Claude Codeのセッションが終わると、SessionEndフックがその会話の記録を受け取る。ターミナルのウィンドウを閉じたときも動く。",
       "依頼、返答、ツールの操作を時刻つきの経過記録に縮める。書き込んだファイルやPRは記録から機械的に拾う。",
@@ -501,7 +501,7 @@ const ABOUT = {
       ["Memory travels between agents", "Entries live apart from any single agent's own memory, so any agent that supports MCP can read and write the same diary."],
     ],
     intro: "It currently supports Claude Code: each time a session ends, Claude Code writes an entry about what it did in that session.",
-    fiction: "<strong>The entries below are fictional.</strong> The projects and events are made up, but the style and level of detail match entries that agent-diary actually generated.",
+    fiction: "<strong>The entries below are fictional.</strong> The projects and events are made up, but they are written in the same style as entries agent-diary actually generated. Real entries are often a little longer.",
     steps: [
       "When a Claude Code session ends, a SessionEnd hook receives the conversation transcript. It also runs when the terminal window is closed.",
       "Requests, replies and tool calls are condensed into a timestamped log. Files written and pull requests are picked up from the transcript mechanically.",
