@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cc-diary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #fdfcf8;
+    --ink: #1d1b18;
+    --ink-soft: #5d5850;
+    --ink-faint: #9a948a;
+    --rule: #e6e1d6;
+    --shu: #c23b22;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --serif: "Shippori Mincho", "Hiragino Mincho ProN", serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); }
+  body {
+    margin: 0;
+    color: var(--ink);
+    background: var(--paper);
+    font-family: var(--serif);
+    font-size: 16px;
+    line-height: 2;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+
+  header {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
+    padding: 14px clamp(16px, 4vw, 48px);
+    background: rgba(253, 252, 248, .92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--rule);
+  }
+  .brand { font-family: var(--mono); font-size: 13px; letter-spacing: .08em; }
+  .brand b { color: var(--shu); font-weight: 500; }
+  .counts { font-family: var(--mono); font-size: 12px; color: var(--ink-faint); }
+  .counts .warn { color: var(--shu); }
+  .tools { margin-left: auto; display: flex; gap: 10px; }
+  .tools[hidden] { display: none; }
+  .tools input, .tools select {
+    font: 13px var(--mono); color: var(--ink);
+    background: transparent; border: 0; border-bottom: 1px solid var(--ink-faint);
+    padding: 4px 2px; outline: none; border-radius: 0;
+  }
+  .tools input { width: min(220px, 44vw); }
+  .tools input:focus, .tools select:focus { border-bottom-color: var(--shu); }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 40em);
+    gap: 0 clamp(24px, 5vw, 72px);
+    padding: 32px clamp(16px, 4vw, 48px) 120px;
+  }
+  nav.index { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 100px); overflow: auto; }
+  nav.index a {
+    display: flex; justify-content: space-between;
+    font: 12px/2.1 var(--mono); color: var(--ink-faint); text-decoration: none;
+  }
+  nav.index a:hover { color: var(--shu); }
+  nav.index .month { font: 600 12px/2.6 var(--mono); color: var(--ink-soft); margin-top: 8px; }
+
+  .day { margin-bottom: 72px; animation: rise .5s ease both; }
+  .day-head { display: flex; align-items: baseline; gap: 14px; margin: 0 0 8px; }
+  .day-num { font: 800 clamp(40px, 7vw, 64px)/1 var(--serif); color: var(--shu); letter-spacing: -.02em; }
+  .day-meta { font: 13px var(--mono); color: var(--ink-faint); }
+
+  .entry { padding: 22px 0 26px; border-top: 1px solid var(--rule); }
+  .entry h2 { font: 600 21px/1.6 var(--serif); margin: 0 0 4px; }
+  .entry .meta { font: 12px/1.8 var(--mono); color: var(--ink-faint); margin-bottom: 12px; }
+  .entry .meta .proj { color: var(--ink-soft); }
+  .entry .body p { margin: 0 0 1em; text-align: justify; }
+  code { font: .86em var(--mono); background: #f1ede3; padding: 1px 4px; border-radius: 2px; word-break: break-all; }
+
+  details { margin-top: 6px; }
+  summary {
+    cursor: pointer; list-style: none;
+    font: 12px var(--mono); color: var(--ink-faint);
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "＋ "; color: var(--shu); }
+  details[open] summary::before { content: "－ "; }
+  .lists { display: grid; gap: 14px; margin-top: 12px; padding-left: 14px; border-left: 2px solid var(--rule); }
+  .lists h3 { font: 500 11px var(--mono); letter-spacing: .1em; color: var(--ink-soft); margin: 0; }
+  .lists h3.bad { color: var(--shu); }
+  .lists ul { margin: 2px 0 0; padding-left: 1.1em; font-size: 14.5px; line-height: 1.85; }
+  .tags { margin-top: 10px; font: 12px var(--mono); color: var(--ink-faint); }
+  .tags span { margin-right: 10px; cursor: pointer; }
+  .tags span:hover { color: var(--shu); }
+
+  .notice { max-width: 34em; margin: 18vh auto; padding: 0 16px; text-align: center; }
+  .notice .big { font: 800 44px/1.3 var(--serif); color: var(--shu); }
+  .notice p { color: var(--ink-soft); }
+  .demo-link { font: 13px var(--mono); color: var(--shu); }
+  .counts a { color: var(--ink-soft); }
+  .empty { color: var(--ink-faint); font-family: var(--mono); font-size: 13px; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 720px) {
+    .layout { grid-template-columns: minmax(0, 1fr); padding-top: 20px; }
+    nav.index { display: none; }
+    .tools { margin-left: 0; width: 100%; }
+    .tools input { flex: 1; width: auto; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">cc<b>/</b>diary</div>
+  <div class="counts" id="counts"></div>
+  <div class="tools" id="tools" hidden>
+    <input id="q" type="search" placeholder="検索" autocomplete="off">
+    <select id="proj"><option value="">すべてのプロジェクト</option></select>
+  </div>
+</header>
+<div id="root"><div class="notice"><p>読み込み中</p></div></div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/+esm";
+import { SUPABASE_KEY, SUPABASE_URL } from "./config.js";
+import { DEMO_ENTRIES } from "./demo.js";
+
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storageKey: "cc-diary-auth", persistSession: true, autoRefreshToken: true } });
+const root = document.getElementById("root");
+const WEEK = "日月火水木金土";
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const inline = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+const hm = (iso) => new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
+// 日付文字列の曜日。暦日として UTC で計算するのでブラウザのタイムゾーンに左右されない
+const wday = (d) => WEEK[new Date(`${d}T00:00:00Z`).getUTCDay()];
+const tokyoDay = (iso) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(new Date(iso));
+
+function notice(big, text, extraHtml = "") {
+  root.innerHTML = `<div class="notice"><div class="big">${esc(big)}</div><p>${esc(text)}</p>${extraHtml}</div>`;
+}
+
+// 訪問者は全員匿名ログインする。訪れた人数は匿名ユーザーの数で数える
+async function signIn() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return;
+  const { error } = await sb.auth.signInAnonymously();
+  if (error) throw error;
+}
+
+// 持ち主かどうかを返す。持ち主が決まっていなければ、このユーザーが持ち主になる
+async function claimOwner() {
+  const { data, error } = await sb.rpc("claim_site");
+  if (error) throw error;
+  return data === true;
+}
+
+// 訪問を記録して、訪れた人数を返す。数えられなくても画面は出す
+async function recordVisit(view) {
+  const { data, error } = await sb.rpc("record_visit", { p_view: view });
+  return error ? null : data;
+}
+const visitorsHtml = (stats) => (stats ? ` · 訪れた人 ${stats.visitors}` : "");
+
+let entries = [];
+
+function render() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const proj = document.getElementById("proj").value;
+  const shown = entries.filter((e) => {
+    if (proj && e.cc_sessions?.project_name !== proj) return false;
+    if (!q) return true;
+    const hay = [e.title, e.body, ...e.did, ...e.failed, ...e.learned, ...e.open_threads, ...e.tags, e.cc_sessions?.project_name].join("\n").toLowerCase();
+    return hay.includes(q);
+  });
+  if (shown.length === 0) {
+    root.innerHTML = `<div class="layout"><div></div><p class="empty">${entries.length ? "該当する日記はない。" : "日記はまだない。Claude Code のセッションを閉じると、ここに増える。"}</p></div>`;
+    return;
+  }
+  const days = new Map();
+  for (const e of shown) {
+    if (!days.has(e.diary_date)) days.set(e.diary_date, []);
+    days.get(e.diary_date).push(e);
+  }
+
+  let index = "";
+  let lastMonth = "";
+  for (const [d, list] of days) {
+    const month = d.slice(0, 7);
+    if (month !== lastMonth) {
+      index += `<div class="month">${month.replace("-", ".")}</div>`;
+      lastMonth = month;
+    }
+    index += `<a href="#d-${d}"><span>${Number(d.slice(8))}日（${wday(d)}）</span><span>${list.length}</span></a>`;
+  }
+
+  let html = "";
+  let i = 0;
+  for (const [d, list] of days) {
+    const wd = wday(d);
+    const projects = [...new Set(list.map((e) => e.cc_sessions?.project_name).filter(Boolean))];
+    html += `<section class="day" id="d-${d}" style="animation-delay:${Math.min(i++, 8) * 60}ms">
+      <div class="day-head"><span class="day-num">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
+      <span class="day-meta">${d.slice(0, 4)} ${wd}曜 · ${list.length}件 · ${esc(projects.join(" / "))}</span></div>`;
+    for (const e of [...list].reverse()) {
+      const startDay = e.span_started_at ? tokyoDay(e.span_started_at) : d;
+      const span = e.span_started_at
+        ? `${startDay !== d ? `${Number(startDay.slice(5, 7))}/${Number(startDay.slice(8))} ` : ""}${hm(e.span_started_at)}〜${hm(e.ended_at)}`
+        : hm(e.ended_at);
+      const sec = (label, xs, bad) => xs.length ? `<div><h3 class="${bad ? "bad" : ""}">${label}</h3><ul>${xs.map((x) => `<li>${inline(x)}</li>`).join("")}</ul></div>` : "";
+      const lists = sec("やったこと", e.did) + sec("うまくいかなかったこと", e.failed, true) + sec("分かったこと", e.learned) + sec("残っていること", e.open_threads)
+        + (e.pr_urls.length ? `<div><h3>PR</h3><ul>${e.pr_urls.map((u) => `<li><a href="${esc(u)}" target="_blank" rel="noreferrer">${esc(u.replace("https://github.com/", ""))}</a></li>`).join("")}</ul></div>` : "")
+        + (e.files_touched.length ? `<div><h3>書き込んだファイル</h3><ul>${e.files_touched.map((f) => `<li><code>${esc(f)}</code></li>`).join("")}</ul></div>` : "");
+      html += `<article class="entry">
+        <h2>${esc(e.title)}</h2>
+        <div class="meta">${span} · <span class="proj">${esc(e.cc_sessions?.project_name ?? "")}</span>${e.cc_sessions?.git_branch ? ` (${esc(e.cc_sessions.git_branch)})` : ""} · 依頼 ${e.stats?.user_prompts ?? "?"} · ツール ${e.stats?.tool_calls ?? "?"}</div>
+        <div class="body">${e.body.split(/\n{2,}/).map((p) => `<p>${inline(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>
+        ${lists ? `<details><summary>くわしく</summary><div class="lists">${lists}</div></details>` : ""}
+        ${e.tags.length ? `<div class="tags">${e.tags.map((t) => `<span data-tag="${esc(t)}">#${esc(t)}</span>`).join("")}</div>` : ""}
+      </article>`;
+    }
+    html += `</section>`;
+  }
+  root.innerHTML = `<div class="layout"><nav class="index">${index}</nav><main>${html}</main></div>`;
+}
+
+root.addEventListener("click", (ev) => {
+  const t = ev.target.closest("[data-tag]");
+  if (!t) return;
+  const q = document.getElementById("q");
+  q.value = t.dataset.tag;
+  render();
+  window.scrollTo({ top: 0 });
+});
+
+function start(list, countsHtml) {
+  entries = list;
+  document.getElementById("counts").innerHTML = countsHtml;
+  const projects = [...new Set(entries.map((e) => e.cc_sessions?.project_name).filter(Boolean))].sort();
+  const sel = document.getElementById("proj");
+  sel.innerHTML = `<option value="">すべてのプロジェクト</option>` + projects.map((p) => `<option>${esc(p)}</option>`).join("");
+  document.getElementById("tools").hidden = false;
+  document.getElementById("q").addEventListener("input", render);
+  sel.addEventListener("change", render);
+  render();
+}
+
+async function main() {
+  const demo = new URLSearchParams(location.search).has("demo");
+  let signedIn = true;
+  try {
+    await signIn();
+  } catch (e) {
+    signedIn = false;
+    if (!demo) {
+      notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`);
+      return;
+    }
+  }
+  if (demo) {
+    const stats = signedIn ? await recordVisit("demo") : null;
+    start(DEMO_ENTRIES, `<span class="warn">デモ</span> · 架空の日記${visitorsHtml(stats)} · <a href="./">戻る</a>`);
+    return;
+  }
+  let owner;
+  try {
+    owner = await claimOwner();
+  } catch (e) {
+    notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`);
+    return;
+  }
+  if (!owner) {
+    const stats = await recordVisit("locked");
+    document.getElementById("counts").innerHTML = visitorsHtml(stats).replace(/^ · /, "");
+    notice("閉じています", "この日記は、最初にこのページを開いた人だけが読める。", `<p><a class="demo-link" href="?demo">架空の日記でデモを見る</a></p>`);
+    return;
+  }
+  const visitStats = await recordVisit("owner");
+  const [{ data, error }, { data: queue }] = await Promise.all([
+    sb.from("diary_entries")
+      .select("id, diary_date, ended_at, span_started_at, title, body, did, failed, learned, open_threads, tags, pr_urls, files_touched, stats, cc_sessions(project_name, git_branch)")
+      .eq("status", "written")
+      .order("ended_at", { ascending: false })
+      .limit(2000),
+    sb.from("diary_entries").select("status").neq("status", "written"),
+  ]);
+  if (error) {
+    notice("読めなかった", error.message);
+    return;
+  }
+  const pending = (queue ?? []).filter((r) => r.status === "pending" || r.status === "generating").length;
+  const failed = (queue ?? []).filter((r) => r.status === "failed").length;
+  start(data, `${data.length}件${pending ? ` · 生成待ち ${pending}` : ""}${failed ? ` · <span class="warn">失敗 ${failed}</span>` : ""}${visitorsHtml(visitStats)}`);
+}
+
+main();
+</script>
+</body>
+</html>
