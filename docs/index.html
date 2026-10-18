@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>agent-diary</title>
+<title>agent-diary | 人もエージェントも読める作業日記</title>
 <!-- エージェントはここから skill.md の手順を読んで、ログインから日記の読み書きまで進める -->
 <link rel="alternate" type="text/markdown" href="./skill.md" title="エージェント向けの手順">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +13,23 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@400;700&display=swap">
 <!-- Sparkle Design のトークンと Tailwind から作った CSS。元は styles/app.css で、bun run build:css で作り直す -->
 <link rel="stylesheet" href="./sparkle.css">
+<!-- 検索とSNSのカード。カードを作るボットはJSを実行しないので、ここに静的に書く。画像は bun run build:og で作り直す -->
+<meta name="description" content="AIエージェントの作業を日記として1か所に残す。Claude Codeのセッションが終わるたびに、Claude Code自身が日記を書く。日記はMCPで別のエージェントからも読める。">
+<link rel="canonical" href="https://konaito.github.io/agent-diary/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="agent-diary">
+<meta property="og:title" content="agent-diary | 人もエージェントも読める作業日記">
+<meta property="og:description" content="AIエージェントの作業を日記として1か所に残す。Claude Codeのセッションが終わるたびに、Claude Code自身が日記を書く。日記はMCPで別のエージェントからも読める。">
+<meta property="og:url" content="https://konaito.github.io/agent-diary/">
+<meta property="og:image" content="https://konaito.github.io/agent-diary/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="agent-diaryのロゴ、「人もエージェントも読める作業日記」の見出し、デモの日記2件">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@konaito_copilot">
+<meta name="twitter:creator" content="@konaito_copilot">
 </head>
 <body class="min-h-dvh">
 <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-divider-low pt-[env(safe-area-inset-top)]">
@@ -547,11 +564,15 @@ function showLocked(stats) {
   });
 }
 
+// 検索エンジンのボットはJSを実行するので、そのままだとクロールのたびに匿名ユーザーと訪問の記録が増える
+const IS_BOT = /(bot|crawler|spider)\b|Google-InspectionTool|Lighthouse/i.test(navigator.userAgent);
+
 async function main() {
   const demo = new URLSearchParams(location.search).has("demo");
+  // ボットはログインしない。user が null のままなので、デモでも訪問を記録しない
   let user = null;
   try {
-    user = await currentUser();
+    if (!IS_BOT) user = await currentUser();
   } catch (e) {
     if (!demo) {
       notice("つながらない", `Supabase に接続できなかった。${e.message ?? e}`, "", { icon: "cloud_off", bad: true });
@@ -574,6 +595,10 @@ async function main() {
       `<span class="${ui.tag.base} ${ui.tag.warning} mr-1">${L().demo}</span>${L().basis}${stats ? ` · ${L().visitors(stats.visitors)}` : ""}`,
       ABOUT[LANG],
     );
+    return;
+  }
+  if (IS_BOT) {
+    showLocked(null);
     return;
   }
   let owner;

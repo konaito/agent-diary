@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "sparkle:generate": "sparkle-design-cli generate -c sparkle.config.json -o styles/sparkle-design.css --globals-path styles/app.css && rm -f styles/SparkleHead.tsx",
-    "build:css": "tailwindcss -i styles/app.css -o docs/sparkle.css --minify"
+    "build:css": "tailwindcss -i styles/app.css -o docs/sparkle.css --minify",
+    "build:og": "bun scripts/og.ts"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.3",

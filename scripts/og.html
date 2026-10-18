@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<!-- SNSのカードに出す画像 docs/og.png の元。bun run build:og で 1200×630 に撮り直す -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:FILL,wght@0..1,500&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@400;700&display=block">
+<!-- 色と書体のトークンだけ使う。scripts/ は Tailwind の読み取り対象外なので、クラスは使わずここに書く -->
+<link rel="stylesheet" href="../docs/sparkle.css">
+<style>
+  html, body { margin: 0; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    position: relative;
+    background: #fff;
+    font-family: var(--font-family-pro);
+    color: var(--color-text-high);
+  }
+  .icon {
+    font-family: "Material Symbols Rounded";
+    font-variation-settings: "FILL" 1;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .left {
+    position: absolute;
+    left: 80px;
+    top: 72px;
+    bottom: 72px;
+    width: 560px;
+    display: flex;
+    flex-direction: column;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 34px;
+    font-weight: 700;
+  }
+  .brand .icon { font-size: 44px; color: var(--color-primary-500); }
+  h1 {
+    margin: 64px 0 0;
+    font-size: 64px;
+    line-height: 1.3;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .lead {
+    margin: 28px 0 0;
+    font-size: 26px;
+    line-height: 1.6;
+    color: var(--color-text-middle);
+  }
+  .url {
+    margin-top: auto;
+    font-family: var(--font-family-mono);
+    font-size: 22px;
+    color: var(--color-text-low);
+  }
+  /* 右側は実際のページと同じ、薄い灰色の上に日記のカードが並ぶ見た目 */
+  .stage {
+    position: absolute;
+    left: 680px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    background: var(--color-neutral-50);
+    border-left: 1px solid var(--color-divider-low);
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--color-divider-middle);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08), 0 4px 12px rgb(0 0 0 / 0.06);
+    padding: 20px 24px 18px;
+    color: var(--color-text-middle);
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    white-space: nowrap;
+    color: var(--color-text-low);
+  }
+  .time { font-family: var(--font-family-mono); font-weight: 700; color: var(--color-text-middle); }
+  .project {
+    padding: 2px 10px;
+    border-radius: 6px;
+    background: var(--color-primary-100);
+    color: var(--color-primary-600);
+    font-weight: 700;
+  }
+  .branch { font-family: var(--font-family-mono); display: inline-flex; align-items: center; gap: 2px; }
+  .branch .icon { font-size: 15px; }
+  .card h2 {
+    margin: 10px 0 0;
+    font-size: 22px;
+    line-height: 1.45;
+    font-weight: 700;
+    word-break: auto-phrase;
+    color: var(--color-text-high);
+  }
+  .card p {
+    margin: 10px 0 0;
+    font-size: 16px;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card code { font-family: var(--font-family-mono); font-size: 0.9em; }
+  .tags { display: flex; gap: 8px; margin-top: 14px; }
+  .tags span {
+    padding: 2px 10px;
+    border-radius: 6px;
+    background: var(--color-neutral-100);
+    color: var(--color-neutral-600);
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="left">
+  <div class="brand"><span class="icon">auto_stories</span>agent-diary</div>
+  <h1>人もエージェントも<br>読める作業日記</h1>
+  <p class="lead">AIエージェントの作業を、<br>日記として1か所に残す。</p>
+  <div class="url">konaito.github.io/agent-diary</div>
+</div>
+<!-- カードの中身はデモ（docs/demo.js）の架空の日記から取った -->
+<div class="stage">
+  <article class="card">
+    <div class="meta">
+      <span class="time">14:05〜15:20</span>
+      <span class="project">tsundoku-app</span>
+      <span class="branch"><span class="icon">call_split</span>fix/isbn-dup</span>
+    </div>
+    <h2>本の二重登録はISBNの桁違いが原因だった</h2>
+    <p>14:05、konaitoから、同じ本が本棚に2冊並ぶことがあると報告を受けた。再現の手順はなく、スクリーンショットが1枚添えられていた。自分は最初、保存ボタンの二度押しを疑い、</p>
+    <div class="tags"><span>#tsundoku-app</span><span>#不具合修正</span><span>#ISBN</span></div>
+  </article>
+  <article class="card">
+    <div class="meta">
+      <span class="time">10:30〜10:34</span>
+      <span class="project">dotfiles</span>
+      <span class="branch"><span class="icon">call_split</span>main</span>
+    </div>
+    <h2>zshの起動が遅い原因を測った</h2>
+    <p>10:30、konaitoから、ターミナルを開くのが遅いと言われた。自分は<code>zsh -i -c exit</code>を10回測り、平均で1.8秒かかることを確かめた。</p>
+    <div class="tags"><span>#dotfiles</span><span>#zsh</span><span>#計測</span></div>
+  </article>
+</div>
+</body>
+</html>
