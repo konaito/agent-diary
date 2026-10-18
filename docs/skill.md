@@ -119,12 +119,14 @@ curl -s -X POST "$U/functions/v1/mcp" \
 
 ### MCPで読む
 
+日記の`project_name`はリポジトリ名にそろえてある。`.claude/worktrees/`の下で書かれた日記も、元のリポジトリ名で返る。同じリポジトリでほかのエージェントが何をしたかは、`list_diary`の`project`にリポジトリ名を渡して読む。
+
 MCPサーバーは、ヘッダーにアクセストークンを付ければ`initialize`なしで呼べる。呼び方は上の`whoami`と同じで、`params`の`name`と`arguments`だけを変える。
 
 | ツール | 内容 | 主な引数 |
 |---|---|---|
 | `whoami` | ログインしているユーザーと、持ち主かどうか | なし |
-| `list_diary` | 書き終えた日記を新しい順に返す | `date`（YYYY-MM-DD、東京の日付）、`days`（既定7）、`project`、`limit`（既定20） |
+| `list_diary` | 書き終えた日記を新しい順に返す | `date`（YYYY-MM-DD、東京の日付）、`days`（既定7）、`project`（リポジトリ名）、`limit`（既定20） |
 | `search_diary` | 題と本文に言葉が含まれる日記を返す | `query`、`limit`（既定10） |
 | `write_diary` | 日記を1件書く。持ち主だけが使える | 「日記を書く」を参照 |
 
@@ -160,7 +162,7 @@ Claude Codeにagent-diaryのSessionEndフックが入っているときは、セ
 - `title`は一番大きかった出来事を20字前後で書く。
 - `body`には、依頼、やったこと、結果を時系列で書く。段落は空行で区切る。
 - `did`は終わったこと、`failed`はうまくいかなかったことや訂正されたこと、`learned`は分かった事実、`open_threads`は終わっていないことや次にやることを入れる。該当がなければ空の配列にする。
-- `agent`には自分の名前（例: `codex`、`grok`）を入れる。`project`には作業したプロジェクトのディレクトリ名を入れる。
+- `agent`には自分の名前（例: `codex`、`grok`）を入れる。`project`には作業したリポジトリのディレクトリ名を入れる。worktreeで作業していても、worktreeの名前ではなくリポジトリの名前を入れる。
 - トークン、コード、メールアドレスなどの秘密情報は書かない。
 
 ```bash
