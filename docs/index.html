@@ -33,7 +33,7 @@
 </head>
 <body class="min-h-dvh">
 <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-divider-low pt-[env(safe-area-inset-top)]">
-  <div class="mx-auto max-w-[1120px] h-14 px-4 lg:px-8 flex items-center gap-2 sm:gap-3">
+  <div class="mx-auto max-w-[800px] h-14 px-4 sm:px-6 flex items-center gap-2 sm:gap-3">
     <a class="flex items-center gap-1.5 shrink-0 text-text-high character-3-bold-pro rounded-minimum outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2" href="./" aria-label="agent-diary">
       <span class="icon-6-fill-1 select-none text-primary-500" aria-hidden="true">auto_stories</span><span id="logoText">agent-diary</span>
     </a>
@@ -52,10 +52,11 @@
   </div>
 </header>
 <div id="root">
-  <div class="mx-auto max-w-[720px] px-4 pt-8 grid gap-4" aria-label="読み込み中">
-    <div class="animate-pulse rounded-notice bg-skeleton-fill h-10 w-32"></div>
-    <div class="animate-pulse rounded-notice bg-skeleton-fill h-48"></div>
-    <div class="animate-pulse rounded-notice bg-skeleton-fill h-48"></div>
+  <div class="mx-auto max-w-[800px] px-4 sm:px-6 pt-6 grid gap-4" aria-label="読み込み中">
+    <div class="animate-pulse rounded-notice bg-skeleton-fill h-32"></div>
+    <div class="animate-pulse rounded-notice bg-skeleton-fill h-8 w-40 mt-4"></div>
+    <div class="animate-pulse rounded-notice bg-skeleton-fill h-20"></div>
+    <div class="animate-pulse rounded-notice bg-skeleton-fill h-20"></div>
   </div>
 </div>
 <div id="sheetBg" hidden></div>
@@ -83,9 +84,8 @@ const I18N = {
     empty: "該当する日記はない。",
     none: "日記はまだない。Claude Codeのセッションを閉じると、ここに増える。",
     dayMeta: (y, wd, n) => `${y} ${wd}曜 · ${n}件`,
-    index: (day, wd) => `${day}日（${wd}）`,
+    option: (p, n) => `${p}（${n}）`,
     meta: (p, t) => `依頼 ${p} · ツール ${t}`,
-    more: "くわしく",
     did: "やったこと",
     failed: "うまくいかなかったこと",
     learned: "分かったこと",
@@ -96,11 +96,10 @@ const I18N = {
     visitors: (n) => `訪れた人 ${n}`,
     switchTo: { lang: "en", label: "English" },
     grass: "日ごとの日記の数",
-    total: (n, days) => `<span class="character-3-bold-mono">${n}</span> 件 · ${days}日`,
+    total: (n, days) => `<span class="character-4-bold-mono">${n}</span> 件 · ${days}日`,
     month: (m) => `${m}月`,
     grassWeekdays: ["月", "水", "金"],
     cell: (md, wd, n) => `${md}（${wd}）${n}件`,
-    span: (w) => (w < 9 ? `${w}週分` : w < 53 ? `${Math.round(w / 4.35)}か月分` : `${Math.round((w / 52.18) * 10) / 10}年分`),
     grassLess: "少ない",
     grassMore: "多い",
   },
@@ -111,9 +110,8 @@ const I18N = {
     empty: "No matching entries.",
     none: "No entries yet.",
     dayMeta: (y, wd, n) => `${y} ${wd} · ${n} ${n === 1 ? "entry" : "entries"}`,
-    index: (day, wd) => `${wd} ${day}`,
+    option: (p, n) => `${p} (${n})`,
     meta: (p, t) => `${p} requests · ${t} tool calls`,
-    more: "Details",
     did: "Done",
     failed: "Didn't work",
     learned: "Learned",
@@ -124,11 +122,10 @@ const I18N = {
     visitors: (n) => `${n} ${n === 1 ? "visitor" : "visitors"}`,
     switchTo: { lang: "ja", label: "日本語" },
     grass: "Entries per day",
-    total: (n, days) => `<span class="character-3-bold-mono">${n}</span> ${n === 1 ? "entry" : "entries"} · ${days} ${days === 1 ? "day" : "days"}`,
+    total: (n, days) => `<span class="character-4-bold-mono">${n}</span> ${n === 1 ? "entry" : "entries"} · ${days} ${days === 1 ? "day" : "days"}`,
     month: (m) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1],
     grassWeekdays: ["Mon", "Wed", "Fri"],
     cell: (md, wd, n) => `${wd} ${md} · ${n} ${n === 1 ? "entry" : "entries"}`,
-    span: (w) => (w < 9 ? `${w} ${w === 1 ? "week" : "weeks"}` : w < 53 ? `${Math.round(w / 4.35)} months` : `${Math.round((w / 52.18) * 10) / 10} years`),
     grassLess: "Less",
     grassMore: "More",
   },
@@ -342,7 +339,7 @@ function openRegister() {
 
 let entries = [];
 
-// 「くわしく」の中の見出しのアイコンと色
+// 開いた日記の中の見出しのアイコンと色
 const SECTION = {
   did: ["check_circle", "text-success-500"],
   failed: ["error", "text-negative-500"],
@@ -365,11 +362,13 @@ const grassColor = (n) => GRASS_LEVELS.find(([min]) => n >= min)?.[1] ?? "bg-neu
 // マスの大きさは GitHub と同じくらい。月名の段とマスの段を同じ grid に並べる
 const GRASS_ROWS = "grid-rows-[16px_repeat(7,11px)] sm:grid-rows-[16px_repeat(7,12px)] gap-[3px]";
 const GRASS_CELL = "block size-[11px] sm:size-3 rounded-[2px]";
+const WEEK = 7 * 86400000;
 const addDays = (d, n) => {
   const x = new Date(`${d}T00:00:00Z`);
   x.setUTCDate(x.getUTCDate() + n);
   return x.toISOString().slice(0, 10);
 };
+const sunday = (d) => addDays(d, -new Date(`${d}T00:00:00Z`).getUTCDay());
 
 // 最初の日記がある週から grassUntil の週までを、日曜始まりで1週1列に並べる。
 // 期間は絞り込む前の全件で決め、色は絞り込んだ日記で付ける。期間の外のマスは描かない
@@ -378,8 +377,8 @@ function grass(shown) {
   const first = entries.reduce((m, e) => (e.diary_date < m ? e.diary_date : m), entries[0].diary_date);
   const counts = new Map();
   for (const e of shown) counts.set(e.diary_date, (counts.get(e.diary_date) ?? 0) + 1);
-  const start = addDays(first, -new Date(`${first}T00:00:00Z`).getUTCDay());
-  const weeks = Math.floor((Date.parse(grassUntil) - Date.parse(start)) / (7 * 86400000)) + 1;
+  const start = sunday(first);
+  const weeks = Math.round((Date.parse(sunday(grassUntil)) - Date.parse(start)) / WEEK) + 1;
   const focus = "outline-none focus-visible:ring-2 focus-visible:ring-border-ring";
   // 月の頭が入る週の列に月名を出す。最初の列には、すぐ後ろ2列に月名が来なければ出す
   const label = (w) => {
@@ -410,23 +409,85 @@ function grass(shown) {
   }
   const wdays = L().grassWeekdays.map((x) => `<span></span><span class="flex items-center">${x}</span>`).join("");
   const legend = [0, 1, 3, 7, 13].map((n) => `<span class="${GRASS_CELL} ${grassColor(n)}"></span>`).join("");
-  return `<section class="${ui.card.base} w-fit max-w-full px-5 pt-4 pb-3" aria-label="${L().grass}">
-    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 mb-2">
-      <span class="character-3-bold-pro text-text-high">${L().total(shown.length, counts.size)}</span>
-      ${grassMeta ? `<span class="character-1-regular-pro text-text-low">${grassMeta}</span>` : ""}
-    </div>
-    <div class="flex gap-1.5">
-      <div class="grid ${GRASS_ROWS} text-[10px] leading-none text-text-low" aria-hidden="true"><span></span>${wdays}</div>
-      <div class="min-w-0 overflow-x-auto pb-1" data-grass-scroll>
+  // 草は日記のある週の分しか幅がないので、件数と凡例を草の右に置く。草が広がって入りきらなくなったら下に回る
+  return `<section class="flex flex-wrap items-end gap-x-10 gap-y-3 pt-6 pb-5 border-b border-divider-low" aria-label="${L().grass}">
+    <div class="flex gap-1 min-w-0 max-w-full">
+      <div class="grid ${GRASS_ROWS} w-6 shrink-0 text-[10px] leading-none text-text-low" aria-hidden="true"><span></span>${wdays}</div>
+      <div class="min-w-0 overflow-x-auto" data-grass-scroll>
         <!-- 右の余白は、最後の列の月名と今日の枠がはみ出して横スクロールにならないため -->
         <div class="grid grid-flow-col ${GRASS_ROWS} auto-cols-[11px] sm:auto-cols-[12px] w-max pr-4">${cols}</div>
       </div>
     </div>
-    <div class="flex items-center justify-between gap-4 mt-1 character-1-regular-pro text-text-low">
-      <span>${L().span(weeks)}</span>
-      <span class="flex items-center gap-[3px]" aria-hidden="true"><span class="mr-1">${L().grassLess}</span>${legend}<span class="ml-1">${L().grassMore}</span></span>
+    <div class="grid gap-2 pb-0.5">
+      <span class="character-4-regular-pro text-text-high">${L().total(shown.length, counts.size)}</span>
+      ${grassMeta ? `<span class="character-1-regular-pro text-text-low">${grassMeta}</span>` : ""}
+      <span class="flex items-center gap-[3px] character-1-regular-pro text-text-low" aria-hidden="true"><span class="mr-1">${L().grassLess}</span>${legend}<span class="ml-1">${L().grassMore}</span></span>
     </div>
   </section>`;
+}
+
+function drawGrass(shown) {
+  const box = $("grass");
+  box.innerHTML = grass(shown);
+  // 入りきらないときは最新の週がある右端から見せる
+  const scroller = box.querySelector("[data-grass-scroll]");
+  if (scroller) scroller.scrollLeft = scroller.scrollWidth;
+}
+
+// ---------- 日記の一覧 ----------
+
+// リポジトリ名の前に付ける色。名前から決めるので、同じリポジトリはいつも同じ色になる
+const REPO_DOTS = ["bg-blue-500", "bg-green-500", "bg-orange-500", "bg-purple-500", "bg-pink-500", "bg-red-500", "bg-yellow-500"];
+function repoDot(name) {
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.codePointAt(0)) >>> 0;
+  return REPO_DOTS[h % REPO_DOTS.length];
+}
+
+// 日記1件を1行にする。閉じているときはタイトルと本文の頭とリポジトリ、押すとその場で全文と項目別の一覧が開く
+function row(e, d) {
+  const focus = "outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2";
+  const startDay = e.span_started_at ? tokyoDay(e.span_started_at) : d;
+  const span = e.span_started_at
+    ? `${startDay !== d ? `${Number(startDay.slice(5, 7))}/${Number(startDay.slice(8))} ` : ""}${hm(e.span_started_at)}〜${hm(e.ended_at)}`
+    : hm(e.ended_at);
+  const repo = e.cc_sessions?.project_name;
+  const branch = e.cc_sessions?.git_branch;
+  const sec = (key, label, items) => {
+    const [name, color] = SECTION[key];
+    return `<div><h4 class="flex items-center gap-1.5 character-2-bold-pro text-text-high">${ui.icon(name, 4, { cls: color })}${label}</h4>
+      <ul class="mt-1 pl-6 list-disc marker:text-neutral-300 character-2-regular-pro text-text-middle leading-relaxed">${items}</ul></div>`;
+  };
+  const li = (xs) => xs.map((x) => `<li class="py-0.5">${inline(x)}</li>`).join("");
+  const lists =
+    (e.did.length ? sec("did", L().did, li(e.did)) : "") +
+    (e.failed.length ? sec("failed", L().failed, li(e.failed)) : "") +
+    (e.learned.length ? sec("learned", L().learned, li(e.learned)) : "") +
+    (e.open_threads.length ? sec("open", L().open, li(e.open_threads)) : "") +
+    (e.pr_urls.length ? sec("pr", "PR", e.pr_urls.map((u) => `<li class="py-0.5 break-all">${ui.externalLink(esc(u), esc(u.replace("https://github.com/", "")), 2)}</li>`).join("")) : "") +
+    (e.files_touched.length ? sec("files", L().files, e.files_touched.map((f) => `<li class="py-0.5"><code>${esc(f)}</code></li>`).join("")) : "");
+  return `<li><details class="group">
+    <summary class="group/row block cursor-pointer py-5 rounded-notice ${focus}">
+      <div class="flex items-start gap-3">
+        <h3 class="flex-1 min-w-0 character-4-bold-pro text-primary-600 group-hover/row:underline underline-offset-2">${esc(e.title)}</h3>
+        ${ui.icon("expand_more", 5, { cls: "mt-0.5 shrink-0 text-neutral-500 transition-transform group-open:rotate-180" })}
+      </div>
+      <p class="mt-1 line-clamp-2 character-3-regular-pro text-text-middle group-open:hidden">${inline(e.body.replace(/\s*\n+\s*/g, " "))}</p>
+      <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 character-2-regular-pro text-text-low">
+        ${repo ? `<span class="inline-flex items-center gap-1.5"><span class="size-3 rounded-full ${repoDot(repo)}" aria-hidden="true"></span>${esc(repo)}</span>` : ""}
+        <span class="character-2-regular-mono tabular-nums">${span}</span>
+        ${branch ? `<span class="inline-flex items-center gap-0.5 min-w-0 character-2-regular-mono">${ui.icon("call_split", 3)}<span class="truncate">${esc(branch)}</span></span>` : ""}
+      </div>
+    </summary>
+    <div class="pb-6">
+      <div class="diary-body">${e.body.split(/\n{2,}/).map((p) => `<p>${inline(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>
+      <div class="flex flex-wrap items-center gap-1.5 mt-4">
+        ${e.tags.map((t) => `<button class="${ui.tagButton}" type="button" data-tag="${esc(t)}">#${esc(t)}</button>`).join("")}
+        <span class="ml-auto character-1-regular-pro text-text-low">${L().meta(e.stats?.user_prompts ?? "?", e.stats?.tool_calls ?? "?")}</span>
+      </div>
+      ${lists ? `<div class="diary-lists grid gap-4 mt-4 p-4 sm:p-5 rounded-notice bg-neutral-50">${lists}</div>` : ""}
+    </div>
+  </details></li>`;
 }
 
 // 絞り込みのアイコン。スマホで絞り込み中かどうかを色で見せる
@@ -445,15 +506,10 @@ function render() {
     return hay.includes(q);
   });
   $("projIcon").className = proj ? PROJ_ICON.on : PROJ_ICON.off;
-  $("grass").innerHTML = grass(shown);
-  // 入りきらないときは最新の週がある右端から見せる
-  const scroller = $("grass").querySelector("[data-grass-scroll]");
-  if (scroller) scroller.scrollLeft = scroller.scrollWidth;
+  drawGrass(shown);
   const stream = $("stream");
   if (shown.length === 0) {
     stream.innerHTML = `<div class="flex flex-col items-center gap-2 py-16 text-center text-text-low">${ui.icon("search_off", 8)}<p class="character-2-regular-pro">${entries.length ? L().empty : L().none}</p></div>`;
-    $("strip").innerHTML = "";
-    $("index").innerHTML = "";
     return;
   }
   const days = new Map();
@@ -461,77 +517,21 @@ function render() {
     if (!days.has(e.diary_date)) days.set(e.diary_date, []);
     days.get(e.diary_date).push(e);
   }
-
-  const focus = "outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2";
-  let strip = "";
-  let index = "";
-  let lastMonth = "";
-  for (const [d, list] of days) {
-    strip += `<a class="flex-none grid justify-items-center min-w-14 px-2.5 py-1.5 rounded-action border border-divider-middle bg-white shadow-raise transition-colors hover:bg-neutral-50 active:border-primary-400 ${focus}" href="#d-${d}">
-      <span class="character-3-bold-mono text-text-high">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
-      <span class="character-1-regular-pro text-text-low">${wday(d)} · ${list.length}</span></a>`;
-    const month = d.slice(0, 7);
-    if (month !== lastMonth) {
-      index += `<div class="px-2 pt-4 pb-1 character-1-bold-pro text-text-low first:pt-0">${month.replace("-", ".")}</div>`;
-      lastMonth = month;
-    }
-    index += `<a class="flex items-center justify-between h-9 px-2 rounded-notice character-2-regular-pro text-text-middle transition-colors hover:bg-[var(--color-black-alpha-50)] hover:text-text-high ${focus}" href="#d-${d}">
-      <span>${L().index(Number(d.slice(8)), wday(d))}</span><span class="character-1-regular-mono text-text-low">${list.length}</span></a>`;
-  }
-
+  // 日の見出しはヘッダーの下に貼り付いて、長い日でも今どの日を読んでいるかが分かる
   let html = "";
   let i = 0;
   for (const [d, list] of days) {
-    const projects = [...new Set(list.map((e) => e.cc_sessions?.project_name).filter(Boolean))];
-    html += `<section class="day scroll-mt-20 mb-12" id="d-${d}" style="animation-delay:${Math.min(i++, 6) * 50}ms">
-      <div class="flex flex-wrap items-end gap-x-3 gap-y-1 mb-4">
-        <span class="character-10-bold-mono text-text-high tabular-nums">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
-        <span class="pb-1.5 character-2-regular-pro text-text-low">${L().dayMeta(d.slice(0, 4), wday(d), list.length)}${projects.length ? ` · ${esc(projects.join(" / "))}` : ""}</span>
-      </div>
-      <div class="grid gap-4">`;
-    for (const e of [...list].reverse()) {
-      const startDay = e.span_started_at ? tokyoDay(e.span_started_at) : d;
-      const span = e.span_started_at
-        ? `${startDay !== d ? `${Number(startDay.slice(5, 7))}/${Number(startDay.slice(8))} ` : ""}${hm(e.span_started_at)}〜${hm(e.ended_at)}`
-        : hm(e.ended_at);
-      const sec = (key, label, items) => {
-        const [name, color] = SECTION[key];
-        return `<div><h3 class="flex items-center gap-1.5 character-2-bold-pro text-text-high">${ui.icon(name, 4, { cls: color })}${label}</h3>
-          <ul class="mt-1 pl-6 list-disc marker:text-neutral-300 character-2-regular-pro text-text-middle leading-relaxed">${items}</ul></div>`;
-      };
-      const li = (xs) => xs.map((x) => `<li class="py-0.5">${inline(x)}</li>`).join("");
-      const lists =
-        (e.did.length ? sec("did", L().did, li(e.did)) : "") +
-        (e.failed.length ? sec("failed", L().failed, li(e.failed)) : "") +
-        (e.learned.length ? sec("learned", L().learned, li(e.learned)) : "") +
-        (e.open_threads.length ? sec("open", L().open, li(e.open_threads)) : "") +
-        (e.pr_urls.length ? sec("pr", "PR", e.pr_urls.map((u) => `<li class="py-0.5 break-all">${ui.externalLink(esc(u), esc(u.replace("https://github.com/", "")), 2)}</li>`).join("")) : "") +
-        (e.files_touched.length ? sec("files", L().files, e.files_touched.map((f) => `<li class="py-0.5"><code>${esc(f)}</code></li>`).join("")) : "");
-      html += `<article class="${ui.card.base} overflow-hidden">
-        <header class="${ui.card.header}">
-          <div class="flex flex-wrap items-center gap-x-2 gap-y-1 character-1-regular-pro text-text-low">
-            <span class="character-1-bold-mono text-text-middle">${span}</span>
-            ${e.cc_sessions?.project_name ? `<span class="${ui.tag.base} ${ui.tag.primary}">${esc(e.cc_sessions.project_name)}</span>` : ""}
-            ${e.cc_sessions?.git_branch ? `<span class="inline-flex items-center gap-0.5 character-1-regular-mono">${ui.icon("call_split", 2)}${esc(e.cc_sessions.git_branch)}</span>` : ""}
-          </div>
-          <h2 class="${ui.card.title} mt-1">${esc(e.title)}</h2>
-        </header>
-        <div class="${ui.card.content} diary-body">${e.body.split(/\n{2,}/).map((p) => `<p>${inline(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>
-        <div class="flex flex-wrap items-center gap-1.5 px-6 pt-1 pb-4">
-          ${e.tags.map((t) => `<button class="${ui.tagButton}" type="button" data-tag="${esc(t)}">#${esc(t)}</button>`).join("")}
-          <span class="ml-auto character-1-regular-pro text-text-low">${L().meta(e.stats?.user_prompts ?? "?", e.stats?.tool_calls ?? "?")}</span>
-        </div>
-        ${lists ? `<details class="group border-t border-divider-low">
-          <summary class="flex items-center gap-1 h-11 px-6 cursor-pointer character-2-bold-pro text-primary-500 transition-colors hover:bg-primary-50 ${focus} focus-visible:ring-inset focus-visible:ring-offset-0">${L().more}${ui.icon("expand_more", 5, { cls: "transition-transform group-open:rotate-180" })}</summary>
-          <div class="diary-lists grid gap-4 px-6 pt-2 pb-5 bg-neutral-50 border-t border-divider-low">${lists}</div>
-        </details>` : ""}
-      </article>`;
-    }
-    html += `</div></section>`;
+    html += `<section class="day scroll-mt-[calc(3.5rem+env(safe-area-inset-top))]" id="d-${d}" style="animation-delay:${Math.min(i++, 6) * 50}ms">
+      <h2 class="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 pt-6 bg-white/95 backdrop-blur">
+        <span class="flex items-baseline gap-3 pb-2 border-b border-divider-middle">
+          <span class="character-6-bold-mono text-text-high tabular-nums">${Number(d.slice(5, 7))}.${d.slice(8)}</span>
+          <span class="character-2-regular-pro text-text-low">${L().dayMeta(d.slice(0, 4), wday(d), list.length)}</span>
+        </span>
+      </h2>
+      <ul class="divide-y divide-divider-low">${list.map((e) => row(e, d)).join("")}</ul>
+    </section>`;
   }
   stream.innerHTML = html;
-  $("strip").innerHTML = strip;
-  $("index").innerHTML = index;
 }
 
 // metaHtml は草の見出しの右に出す。until は草の右端の日、today は枠を付ける日（デモでは空）
@@ -543,14 +543,18 @@ function start(list, metaHtml, calloutHtml = "", { until, today = "" } = {}) {
   $("counts").textContent = "";
   $("logoText").className = "hidden sm:inline";
   root.innerHTML = `
-    <div class="mx-auto max-w-[1120px] px-4 lg:px-8 pt-4"><div class="lg:ml-[248px]" id="grass"></div></div>
-    <nav class="strip flex gap-2 overflow-x-auto px-4 pt-3 pb-2 lg:hidden" id="strip" aria-label="日付"></nav>
-    <div class="mx-auto max-w-[1120px] px-4 lg:px-8 pt-4 pb-24 lg:grid lg:grid-cols-[200px_minmax(0,720px)] lg:gap-12">
-      <nav class="hidden lg:block sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-auto" id="index" aria-label="日付"></nav>
-      <main>${calloutHtml}<div id="stream"></div></main>
+    <div class="mx-auto max-w-[800px] px-4 sm:px-6 pb-24">
+      <div id="grass"></div>
+      <main>${calloutHtml ? `<div class="pt-6">${calloutHtml}</div>` : ""}<div id="stream"></div></main>
     </div>`;
-  const projects = [...new Set(entries.map((e) => e.cc_sessions?.project_name).filter(Boolean))].sort();
-  $("proj").innerHTML = `<option value="">${L().all}</option>` + projects.map((p) => `<option>${esc(p)}</option>`).join("");
+  // 絞り込みは日記の多いリポジトリから並べる
+  const repos = new Map();
+  for (const e of entries) {
+    const p = e.cc_sessions?.project_name;
+    if (p) repos.set(p, (repos.get(p) ?? 0) + 1);
+  }
+  const sorted = [...repos].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  $("proj").innerHTML = `<option value="">${L().all}</option>` + sorted.map(([p, n]) => `<option value="${esc(p)}">${esc(L().option(p, n))}</option>`).join("");
   $("q").placeholder = L().search;
   $("tools").hidden = false;
   render();
@@ -621,7 +625,7 @@ const ABOUT = {
       "経過記録をClaude Codeに渡して、日記を書かせる。経過にないことは書かない決まりにしてある。",
       "日記はSupabaseに入り、このページで日付ごとに読める。",
     ],
-    details: "各日記の「くわしく」を開くと、やったこと、うまくいかなかったこと、分かったこと、残っていることが分かれて並ぶ。タグを押すと同じタグの日記に絞れる。",
+    details: "日記の行を押すと、本文の全体と、やったこと、うまくいかなかったこと、分かったこと、残っていることが開く。タグを押すと同じタグの日記に絞れる。",
     owner: "本物の日記は持ち主だけが読める。持ち主は、メールに届く数字のコードで、どの端末からでもログインする。",
     repo: "GitHubで仕組みを見る",
     otp: "OTPを選んだ理由",
@@ -644,7 +648,7 @@ const ABOUT = {
       "Claude Code is given the log and writes the entry. It is told not to write anything that is not in the log.",
       "The entry is stored in Supabase and shown on this page by date.",
     ],
-    details: "Open “Details” on an entry to see what was done, what didn't work, what was learned and what is still open. Tap a tag to filter by it.",
+    details: "Tap an entry to open the full text along with what was done, what didn't work, what was learned and what is still open. Tap a tag to filter by it.",
     owner: "Real entries are visible only to the owner, who signs in on any device with a numeric code sent by email.",
     repo: "How it works on GitHub",
     otp: "Why a one-time code",
