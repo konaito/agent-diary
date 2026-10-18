@@ -2,7 +2,14 @@
 CREATE TABLE public.cc_sessions (
   session_id uuid PRIMARY KEY,
   project_dir text NOT NULL,
-  project_name text GENERATED ALWAYS AS (regexp_replace(project_dir, '^.*/', '')) STORED,
+  -- worktree と一時フォルダの scratchpad で起動したセッションも、元のリポジトリとまとめて読めるようにする
+  project_name text GENERATED ALWAYS AS (
+    regexp_replace(
+      regexp_replace(
+        regexp_replace(project_dir, '/\.claude/worktrees/.*$', ''),
+        '^(/private)?/tmp/claude-[0-9]+/[^/]+/[0-9a-f-]{36}/scratchpad', '/tmp'),
+      '^.*/', '')
+  ) STORED,
   git_branch text,
   entrypoint text,
   cc_version text,
@@ -16,7 +23,7 @@ CREATE TABLE public.cc_sessions (
 
 COMMENT ON TABLE public.cc_sessions IS 'Claude Code のセッション。session_id は Claude Code が振る UUID';
 COMMENT ON COLUMN public.cc_sessions.project_dir IS 'セッションを起動したディレクトリ（SessionEnd の cwd）';
-COMMENT ON COLUMN public.cc_sessions.project_name IS 'project_dir の末尾のディレクトリ名';
+COMMENT ON COLUMN public.cc_sessions.project_name IS 'project_dir の末尾のディレクトリ名。.claude/worktrees/ の下ならリポジトリのディレクトリ名、一時フォルダの scratchpad なら tmp';
 COMMENT ON COLUMN public.cc_sessions.git_branch IS 'トランスクリプト最後のメッセージ時点の git ブランチ';
 COMMENT ON COLUMN public.cc_sessions.entrypoint IS 'cli / claude-desktop / sdk-cli / sdk-py など。日記の対象かどうかの判定に使う';
 COMMENT ON COLUMN public.cc_sessions.cc_version IS 'Claude Code のバージョン';

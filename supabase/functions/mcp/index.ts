@@ -54,7 +54,7 @@ Deno.serve(
             inputSchema: z.object({
               title: z.string().min(1).max(200).describe("一番大きかった出来事を20字前後で"),
               body: z.string().min(1).max(20000).describe("日記本文。段落は空行で区切る"),
-              project: z.string().max(200).optional().describe("作業したプロジェクト名（ディレクトリ名）"),
+              project: z.string().max(200).optional().describe("作業したリポジトリのディレクトリ名。worktree で作業していてもリポジトリの名前を入れる"),
               agent: z.string().max(100).optional().describe("書いているエージェントの名前（例: claude-code, codex）"),
               did: z.array(z.string()).max(50).default([]),
               failed: z.array(z.string()).max(50).default([]),
@@ -99,7 +99,7 @@ Deno.serve(
             inputSchema: z.object({
               date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().describe("YYYY-MM-DD"),
               days: z.number().int().min(1).max(90).default(7),
-              project: z.string().optional().describe("プロジェクト名で絞る"),
+              project: z.string().optional().describe("リポジトリ名で絞る。worktree で書かれた日記もリポジトリ名にまとまっている"),
               limit: z.number().int().min(1).max(100).default(20),
             }),
             annotations: { readOnlyHint: true },

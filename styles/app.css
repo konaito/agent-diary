@@ -18,7 +18,7 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    background: var(--color-neutral-50);
+    background: var(--color-white);
     color: var(--color-text-high);
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -60,12 +60,6 @@
   }
   .sheet {
     animation: up 0.22s ease both;
-  }
-  .strip {
-    scrollbar-width: none;
-  }
-  .strip::-webkit-scrollbar {
-    display: none;
   }
 }
 
