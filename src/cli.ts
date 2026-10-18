@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // agent-diary: Claude Code のセッションが終わるたびに、そのセッションの日記を Claude Code 自身に書かせる。
 import { basename } from "node:path";
-import { mkdirSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { Glob } from "bun";
 import { join } from "node:path";
@@ -110,6 +110,26 @@ async function enqueue(paths: string[]) {
   await runWorker();
 }
 
+// 開いている対話セッションの ID。~/.claude/sessions/<pid>.json は公開仕様ではないので、読めなければ空とみなす
+function openSessionIds(): Set<string> {
+  const dir = join(homedir(), ".claude", "sessions");
+  const ids = new Set<string>();
+  let files: string[] = [];
+  try {
+    files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+  } catch {
+    return ids;
+  }
+  for (const f of files) {
+    try {
+      const j = JSON.parse(readFileSync(join(dir, f), "utf8"));
+      process.kill(j.pid, 0);
+      if (typeof j.sessionId === "string") ids.add(j.sessionId);
+    } catch {}
+  }
+  return ids;
+}
+
 // 直近 days 日の対話セッションを探してキューに入れる。DB にある行とは (session_id, ended_at) で重ならない
 async function backfill(args: string[]) {
   const daysIdx = args.indexOf("--days");
@@ -118,6 +138,8 @@ async function backfill(args: string[]) {
   if (!Number.isFinite(days) || days <= 0) throw new Error("--days には正の数を指定してください");
   const since = Date.now() - days * 86_400_000;
   const cfg = loadConfig();
+  // 開いているセッションは、閉じたときにフックが書く。ここで拾うと途中で日記が割れる
+  const open = openSessionIds();
   const root = join(homedir(), ".claude", "projects");
   const picked: { path: string; sid: string; cwd: string; last: string; prompts: number }[] = [];
   const skipped: Record<string, number> = {};
@@ -128,7 +150,8 @@ async function backfill(args: string[]) {
     const d = await parseTranscript(path);
     const why = !d.lastEventAt || Date.parse(d.lastEventAt) < since ? "out_of_window"
       : d.entrypoint && !cfg.entrypoints.includes(d.entrypoint) ? `entrypoint:${d.entrypoint}`
-      : d.stats.user_prompts === 0 ? "no_user_prompt" : null;
+      : d.stats.user_prompts === 0 ? "no_user_prompt"
+      : open.has(d.sessionId ?? basename(path, ".jsonl")) ? "open_session" : null;
     if (why) {
       skipped[why] = (skipped[why] ?? 0) + 1;
       continue;

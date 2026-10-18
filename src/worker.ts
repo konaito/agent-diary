@@ -188,11 +188,13 @@ async function processEntry(db: SQL, cfg: Config, row: QueueRow) {
   if (claimed.length === 0) return;
 
   try {
+    // 続きの起点は、同じセッションで一番後ろのメッセージまで読んだ行。ended_at の前後では決めない。
+    // backfill の ended_at はトランスクリプトの最後の時刻で、フックや enqueue の行（受け取った時刻）より前になることがある
     const [prev] = await db`
       select last_message_uuid, title, body from public.diary_entries
-      where session_id = ${row.session_id} and ended_at < ${row.ended_at}
+      where session_id = ${row.session_id} and id <> ${row.id}
         and status in ('written', 'skipped') and last_message_uuid is not null
-      order by ended_at desc limit 1`;
+      order by span_ended_at desc nulls last, id desc limit 1`;
     const afterUuid: string | null = prev?.last_message_uuid ?? null;
 
     // 何も入力せずに閉じたセッションは、Claude Code がトランスクリプトを書かないのでファイルがない。失敗ではなく書かない扱いにする
