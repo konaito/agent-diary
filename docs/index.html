@@ -33,25 +33,24 @@
 </head>
 <body class="min-h-dvh">
 <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-divider-low pt-[env(safe-area-inset-top)]">
-  <div class="mx-auto max-w-[1120px] h-14 px-4 lg:px-8 flex items-center gap-3">
-    <a class="flex items-center gap-1.5 shrink-0 text-text-high character-3-bold-pro rounded-minimum outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2" href="./">
-      <span class="icon-6-fill-1 select-none text-primary-500" aria-hidden="true">auto_stories</span>agent-diary
+  <div class="mx-auto max-w-[1120px] h-14 px-4 lg:px-8 flex items-center gap-2 sm:gap-3">
+    <a class="flex items-center gap-1.5 shrink-0 text-text-high character-3-bold-pro rounded-minimum outline-none focus-visible:ring-2 focus-visible:ring-border-ring focus-visible:ring-offset-2" href="./" aria-label="agent-diary">
+      <span class="icon-6-fill-1 select-none text-primary-500" aria-hidden="true">auto_stories</span><span id="logoText">agent-diary</span>
     </a>
     <div class="min-w-0 truncate character-1-regular-pro text-text-low" id="counts"></div>
+    <!-- 検索と絞り込み。日記を出す画面でだけ見せる -->
+    <div class="flex flex-1 min-w-0 items-center gap-2 sm:max-w-[560px]" id="tools" hidden>
+      <label class="flex-1 min-w-0" id="qWrap">
+        <span class="sr-only">検索</span>
+      </label>
+      <div class="relative shrink-0 size-10 sm:size-auto sm:w-44" id="projWrap"></div>
+    </div>
     <div class="ml-auto flex items-center gap-1 shrink-0">
       <a id="langLink" hidden></a>
       <button id="acctBtn" type="button" hidden></button>
     </div>
   </div>
 </header>
-<div class="mx-auto max-w-[1120px] px-4 lg:px-8" id="tools" hidden>
-  <div class="flex gap-2 pt-4 lg:ml-[248px] lg:max-w-[720px]">
-    <label class="flex-1 min-w-0" id="qWrap">
-      <span class="sr-only">検索</span>
-    </label>
-    <div class="w-[38%] max-w-48 shrink-0" id="projWrap"></div>
-  </div>
-</div>
 <div id="root">
   <div class="mx-auto max-w-[720px] px-4 pt-8 grid gap-4" aria-label="読み込み中">
     <div class="animate-pulse rounded-notice bg-skeleton-fill h-10 w-32"></div>
@@ -96,6 +95,14 @@ const I18N = {
     basis: "架空の日記",
     visitors: (n) => `訪れた人 ${n}`,
     switchTo: { lang: "en", label: "English" },
+    grass: "日ごとの日記の数",
+    total: (n, days) => `<span class="character-3-bold-mono">${n}</span> 件 · ${days}日`,
+    month: (m) => `${m}月`,
+    grassWeekdays: ["月", "水", "金"],
+    cell: (md, wd, n) => `${md}（${wd}）${n}件`,
+    span: (w) => (w < 9 ? `${w}週分` : w < 53 ? `${Math.round(w / 4.35)}か月分` : `${Math.round((w / 52.18) * 10) / 10}年分`),
+    grassLess: "少ない",
+    grassMore: "多い",
   },
   en: {
     weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
@@ -116,6 +123,14 @@ const I18N = {
     basis: "fictional entries",
     visitors: (n) => `${n} ${n === 1 ? "visitor" : "visitors"}`,
     switchTo: { lang: "ja", label: "日本語" },
+    grass: "Entries per day",
+    total: (n, days) => `<span class="character-3-bold-mono">${n}</span> ${n === 1 ? "entry" : "entries"} · ${days} ${days === 1 ? "day" : "days"}`,
+    month: (m) => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m - 1],
+    grassWeekdays: ["Mon", "Wed", "Fri"],
+    cell: (md, wd, n) => `${wd} ${md} · ${n} ${n === 1 ? "entry" : "entries"}`,
+    span: (w) => (w < 9 ? `${w} ${w === 1 ? "week" : "weeks"}` : w < 53 ? `${Math.round(w / 4.35)} months` : `${Math.round((w / 52.18) * 10) / 10} years`),
+    grassLess: "Less",
+    grassMore: "More",
   },
 };
 let LANG = "ja";
@@ -273,13 +288,16 @@ document.addEventListener("keydown", (ev) => {
 
 function setupAccount(user) {
   const btn = $("acctBtn");
-  btn.className = ui.button({ variant: "ghost", theme: "neutral", size: "sm" });
+  // スマホのヘッダーは検索欄に幅を譲るので、アイコンだけにする
+  btn.className = `${ui.button({ variant: "ghost", theme: "neutral", size: "sm" })} max-sm:min-w-0 max-sm:px-2`;
   btn.hidden = false;
   if (user.is_anonymous) {
-    btn.innerHTML = `<span class="${ui.dot} mr-1.5"></span>メール未登録`;
+    btn.setAttribute("aria-label", "メール未登録");
+    btn.innerHTML = `<span class="relative inline-flex sm:hidden">${ui.icon("account_circle", 5)}<span class="${ui.dot} absolute -right-0.5 -top-0.5"></span></span><span class="hidden sm:inline-flex items-center"><span class="${ui.dot} mr-1.5"></span>メール未登録</span>`;
     btn.onclick = () => openRegister();
   } else {
-    btn.innerHTML = `${ui.buttonIcon("account_circle", "sm")}アカウント`;
+    btn.setAttribute("aria-label", "アカウント");
+    btn.innerHTML = `${ui.icon("account_circle", 5, { cls: "sm:hidden" })}<span class="hidden sm:inline-flex items-center">${ui.buttonIcon("account_circle", "sm")}アカウント</span>`;
     btn.onclick = () =>
       openSheet(
         "アカウント",
@@ -334,6 +352,89 @@ const SECTION = {
   files: ["description", "text-neutral-500"],
 };
 
+// ---------- 草 ----------
+
+// 草の見出しの右に出す件数以外の情報と、草の右端の日と、枠を付ける今日。start() で決める
+let grassMeta = "";
+let grassUntil = "";
+let grassToday = "";
+
+// 1マスが1日。色はその日に書いた日記の件数で4段に分ける
+const GRASS_LEVELS = [[13, "bg-success-800"], [7, "bg-success-600"], [3, "bg-success-400"], [1, "bg-success-200"]];
+const grassColor = (n) => GRASS_LEVELS.find(([min]) => n >= min)?.[1] ?? "bg-neutral-100";
+// マスの大きさは GitHub と同じくらい。月名の段とマスの段を同じ grid に並べる
+const GRASS_ROWS = "grid-rows-[16px_repeat(7,11px)] sm:grid-rows-[16px_repeat(7,12px)] gap-[3px]";
+const GRASS_CELL = "block size-[11px] sm:size-3 rounded-[2px]";
+const addDays = (d, n) => {
+  const x = new Date(`${d}T00:00:00Z`);
+  x.setUTCDate(x.getUTCDate() + n);
+  return x.toISOString().slice(0, 10);
+};
+
+// 最初の日記がある週から grassUntil の週までを、日曜始まりで1週1列に並べる。
+// 期間は絞り込む前の全件で決め、色は絞り込んだ日記で付ける。期間の外のマスは描かない
+function grass(shown) {
+  if (!entries.length) return "";
+  const first = entries.reduce((m, e) => (e.diary_date < m ? e.diary_date : m), entries[0].diary_date);
+  const counts = new Map();
+  for (const e of shown) counts.set(e.diary_date, (counts.get(e.diary_date) ?? 0) + 1);
+  const start = addDays(first, -new Date(`${first}T00:00:00Z`).getUTCDay());
+  const weeks = Math.floor((Date.parse(grassUntil) - Date.parse(start)) / (7 * 86400000)) + 1;
+  const focus = "outline-none focus-visible:ring-2 focus-visible:ring-border-ring";
+  // 月の頭が入る週の列に月名を出す。最初の列には、すぐ後ろ2列に月名が来なければ出す
+  const label = (w) => {
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(start, w * 7 + i);
+      if (d.endsWith("-01") && d >= first && d <= grassUntil) return L().month(Number(d.slice(5, 7)));
+    }
+    return "";
+  };
+  let cols = "";
+  for (let w = 0; w < weeks; w++) {
+    const name = label(w) || (w === 0 && !label(1) && !label(2) ? L().month(Number(first.slice(5, 7))) : "");
+    cols += `<span class="self-end whitespace-nowrap text-[10px] leading-none text-text-low">${name}</span>`;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(start, w * 7 + i);
+      if (d < first || d > grassUntil) {
+        cols += `<span aria-hidden="true"></span>`;
+        continue;
+      }
+      const n = counts.get(d) ?? 0;
+      const tip = esc(L().cell(`${Number(d.slice(5, 7))}/${Number(d.slice(8))}`, wday(d), n));
+      // リンクのマスは outline-none でフォーカスの枠を消しているので、今日の枠は ring で描く
+      const today = d === grassToday ? "ring-1 ring-offset-1 ring-neutral-800" : "";
+      cols += n
+        ? `<a class="${GRASS_CELL} ${grassColor(n)} ${today} transition-opacity hover:opacity-70 ${focus}" href="#d-${d}" title="${tip}" aria-label="${tip}"></a>`
+        : `<span class="${GRASS_CELL} ${grassColor(0)} ${today}" title="${tip}"></span>`;
+    }
+  }
+  const wdays = L().grassWeekdays.map((x) => `<span></span><span class="flex items-center">${x}</span>`).join("");
+  const legend = [0, 1, 3, 7, 13].map((n) => `<span class="${GRASS_CELL} ${grassColor(n)}"></span>`).join("");
+  return `<section class="${ui.card.base} w-fit max-w-full px-5 pt-4 pb-3" aria-label="${L().grass}">
+    <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 mb-2">
+      <span class="character-3-bold-pro text-text-high">${L().total(shown.length, counts.size)}</span>
+      ${grassMeta ? `<span class="character-1-regular-pro text-text-low">${grassMeta}</span>` : ""}
+    </div>
+    <div class="flex gap-1.5">
+      <div class="grid ${GRASS_ROWS} text-[10px] leading-none text-text-low" aria-hidden="true"><span></span>${wdays}</div>
+      <div class="min-w-0 overflow-x-auto pb-1" data-grass-scroll>
+        <!-- 右の余白は、最後の列の月名と今日の枠がはみ出して横スクロールにならないため -->
+        <div class="grid grid-flow-col ${GRASS_ROWS} auto-cols-[11px] sm:auto-cols-[12px] w-max pr-4">${cols}</div>
+      </div>
+    </div>
+    <div class="flex items-center justify-between gap-4 mt-1 character-1-regular-pro text-text-low">
+      <span>${L().span(weeks)}</span>
+      <span class="flex items-center gap-[3px]" aria-hidden="true"><span class="mr-1">${L().grassLess}</span>${legend}<span class="ml-1">${L().grassMore}</span></span>
+    </div>
+  </section>`;
+}
+
+// 絞り込みのアイコン。スマホで絞り込み中かどうかを色で見せる
+const PROJ_ICON = {
+  off: "sm:hidden pointer-events-none flex size-10 items-center justify-center rounded-action text-neutral-700",
+  on: "sm:hidden pointer-events-none flex size-10 items-center justify-center rounded-action text-primary-500 bg-primary-50",
+};
+
 function render() {
   const q = $("q").value.trim().toLowerCase();
   const proj = $("proj").value;
@@ -343,6 +444,11 @@ function render() {
     const hay = [e.title, e.body, ...e.did, ...e.failed, ...e.learned, ...e.open_threads, ...e.tags, e.cc_sessions?.project_name].join("\n").toLowerCase();
     return hay.includes(q);
   });
+  $("projIcon").className = proj ? PROJ_ICON.on : PROJ_ICON.off;
+  $("grass").innerHTML = grass(shown);
+  // 入りきらないときは最新の週がある右端から見せる
+  const scroller = $("grass").querySelector("[data-grass-scroll]");
+  if (scroller) scroller.scrollLeft = scroller.scrollWidth;
   const stream = $("stream");
   if (shown.length === 0) {
     stream.innerHTML = `<div class="flex flex-col items-center gap-2 py-16 text-center text-text-low">${ui.icon("search_off", 8)}<p class="character-2-regular-pro">${entries.length ? L().empty : L().none}</p></div>`;
@@ -428,10 +534,16 @@ function render() {
   $("index").innerHTML = index;
 }
 
-function start(list, countsHtml, calloutHtml = "") {
+// metaHtml は草の見出しの右に出す。until は草の右端の日、today は枠を付ける日（デモでは空）
+function start(list, metaHtml, calloutHtml = "", { until, today = "" } = {}) {
   entries = list;
-  $("counts").innerHTML = countsHtml;
+  grassMeta = metaHtml;
+  grassUntil = until;
+  grassToday = today;
+  $("counts").textContent = "";
+  $("logoText").className = "hidden sm:inline";
   root.innerHTML = `
+    <div class="mx-auto max-w-[1120px] px-4 lg:px-8 pt-4"><div class="lg:ml-[248px]" id="grass"></div></div>
     <nav class="strip flex gap-2 overflow-x-auto px-4 pt-3 pb-2 lg:hidden" id="strip" aria-label="日付"></nav>
     <div class="mx-auto max-w-[1120px] px-4 lg:px-8 pt-4 pb-24 lg:grid lg:grid-cols-[200px_minmax(0,720px)] lg:gap-12">
       <nav class="hidden lg:block sticky top-20 self-start max-h-[calc(100vh-6rem)] overflow-auto" id="index" aria-label="日付"></nav>
@@ -444,9 +556,14 @@ function start(list, countsHtml, calloutHtml = "") {
   render();
 }
 
-// 検索欄と絞り込み。Sparkle の Input と Select の見た目
+// 検索欄と絞り込み。Sparkle の Input と Select の見た目。
+// スマホでは絞り込みをアイコンにして、透明にした select をその上に重ねる
 $("qWrap").insertAdjacentHTML("beforeend", `<div class="${ui.input.wrap} ${ui.input.md}">${ui.icon("search", 5, { cls: "pl-1.5 text-neutral-500" })}<input class="${ui.input.field}" id="q" type="search" placeholder="検索" autocomplete="off" enterkeyhint="search"></div>`);
-$("projWrap").innerHTML = `<div class="${ui.select.wrap}"><select class="${ui.select.field}" id="proj" aria-label="プロジェクト"><option value="">すべて</option></select>${ui.icon("expand_more", 5, { cls: ui.select.icon })}</div>`;
+$("projWrap").innerHTML = `<div class="${ui.select.wrap} size-full rounded-action has-[:focus-visible]:max-sm:ring-2 has-[:focus-visible]:max-sm:ring-border-ring">
+  <select class="${ui.select.field} max-sm:absolute max-sm:inset-0 max-sm:opacity-0" id="proj" aria-label="プロジェクト"><option value="">すべて</option></select>
+  ${ui.icon("expand_more", 5, { cls: `${ui.select.icon} max-sm:hidden` })}
+  <span class="${PROJ_ICON.off}" id="projIcon">${ui.icon("filter_list", 5)}</span>
+</div>`;
 
 root.addEventListener("click", (ev) => {
   const t = ev.target.closest("[data-tag]");
@@ -590,10 +707,13 @@ async function main() {
     link.lang = sw.lang;
     link.innerHTML = `${ui.buttonIcon("translate", "sm")}${sw.label}`;
     link.hidden = false;
+    const list = LANG === "en" ? DEMO_ENTRIES_EN : DEMO_ENTRIES;
+    // デモの日記は日付が決まっているので、草は今日ではなく最後の日記で終える
     start(
-      LANG === "en" ? DEMO_ENTRIES_EN : DEMO_ENTRIES,
+      list,
       `<span class="${ui.tag.base} ${ui.tag.warning} mr-1">${L().demo}</span>${L().basis}${stats ? ` · ${L().visitors(stats.visitors)}` : ""}`,
       ABOUT[LANG],
+      { until: list.reduce((m, e) => (e.diary_date > m ? e.diary_date : m), list[0].diary_date) },
     );
     return;
   }
@@ -628,14 +748,17 @@ async function main() {
   }
   const pending = (queue ?? []).filter((r) => r.status === "pending" || r.status === "generating").length;
   const failed = (queue ?? []).filter((r) => r.status === "failed").length;
-  const counts = [`${data.length}件`, pending ? `生成待ち ${pending}` : "", failed ? `<span class="text-negative-500">失敗 ${failed}</span>` : "", visitorsText(visitStats)].filter(Boolean).join(" · ");
+  const meta = [pending ? `生成待ち ${pending}` : "", failed ? `<span class="text-negative-500">失敗 ${failed}</span>` : "", visitorsText(visitStats)].filter(Boolean).join(" · ");
+  const today = tokyoDay(Date.now());
+  const latest = data.length ? data[0].diary_date : today;
   const callout = user.is_anonymous
     ? `<div class="${ui.inlineMessage.info} mb-6" data-callout role="status">
         <span class="${ui.inlineMessage.icon}">${ui.icon("info", 6)}</span>
         <p class="${ui.inlineMessage.body}">今はこの端末でだけ読める。<button class="${ui.link} cursor-pointer" type="button" data-register>メールを登録</button>すると、他の端末でも読める。</p>
       </div>`
     : "";
-  start(data, counts, callout);
+  // 端末の時計がずれていても最新の日記が草からはみ出さないよう、遅い方を右端にする
+  start(data, meta, callout, { until: latest > today ? latest : today, today });
 }
 
 main();
